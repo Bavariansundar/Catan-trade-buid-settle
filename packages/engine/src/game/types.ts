@@ -10,10 +10,22 @@ export interface PlayerPieceSupply {
   readonly roads: number;
 }
 
+export type DevCardType =
+  "knight" | "victory_point" | "monopoly" | "road_building" | "year_of_plenty";
+
+export interface DevCardInstance {
+  readonly type: DevCardType;
+  /** `turnNumber` when bought — cards bought this turn can't be played yet. */
+  readonly boughtTurn: number;
+}
+
 export interface Player {
   readonly id: PlayerId;
   readonly hand: ResourceHand;
   readonly pieces: PlayerPieceSupply;
+  readonly devCards: readonly DevCardInstance[];
+  readonly knightsPlayed: number;
+  readonly devCardPlayedThisTurn: boolean;
 }
 
 export type BuildingType = "settlement" | "city";
@@ -59,6 +71,17 @@ export interface EndedPhase {
 
 export type Phase = SetupPhase | RollPhase | DiscardPhase | RobberPhase | MainPhase | EndedPhase;
 
+export interface TradeOffer {
+  readonly id: string;
+  readonly proposerId: PlayerId;
+  readonly offering: Partial<ResourceHand>;
+  readonly requesting: Partial<ResourceHand>;
+  /** `null` = open to every other player. */
+  readonly targetPlayerIds: readonly PlayerId[] | null;
+  /** Players who have already declined this specific offer. */
+  readonly rejectedBy: readonly PlayerId[];
+}
+
 export interface GameState {
   readonly board: Board;
   readonly players: readonly Player[];
@@ -69,10 +92,18 @@ export interface GameState {
   /** Index into `players` of whoever may act next in a single-actor phase. */
   readonly currentPlayerIndex: number;
   readonly phase: Phase;
-  /** Replayable RNG state consumed by dice rolls and robber steals. */
+  /** Replayable RNG state consumed by dice rolls, robber steals, and dev card shuffling. */
   readonly rngState: number;
   /** This turn's roll, if any; reset to null at the start of each turn. */
   readonly diceRoll: readonly [number, number] | null;
+  readonly devDeck: readonly DevCardType[];
+  readonly tradeOffers: ReadonlyMap<string, TradeOffer>;
+  readonly nextTradeId: number;
+  /** Increments on every END_TURN; used to gate "can't play a card bought this turn". */
+  readonly turnNumber: number;
+  readonly longestRoadPlayerId: PlayerId | null;
+  readonly largestArmyPlayerId: PlayerId | null;
+  readonly targetVictoryPoints: number;
 }
 
 // --- Actions -----------------------------------------------------------
@@ -130,6 +161,84 @@ export interface EndTurnAction {
   readonly playerId: PlayerId;
 }
 
+export interface ProposeTradeAction {
+  readonly type: "PROPOSE_TRADE";
+  readonly playerId: PlayerId;
+  readonly offering: Partial<ResourceHand>;
+  readonly requesting: Partial<ResourceHand>;
+  readonly targetPlayerIds: readonly PlayerId[] | null;
+}
+
+export interface AcceptTradeAction {
+  readonly type: "ACCEPT_TRADE";
+  readonly playerId: PlayerId;
+  readonly tradeId: string;
+}
+
+export interface RejectTradeAction {
+  readonly type: "REJECT_TRADE";
+  readonly playerId: PlayerId;
+  readonly tradeId: string;
+}
+
+export interface CounterTradeAction {
+  readonly type: "COUNTER_TRADE";
+  readonly playerId: PlayerId;
+  readonly tradeId: string;
+  readonly offering: Partial<ResourceHand>;
+  readonly requesting: Partial<ResourceHand>;
+}
+
+export interface CancelTradeAction {
+  readonly type: "CANCEL_TRADE";
+  readonly playerId: PlayerId;
+  readonly tradeId: string;
+}
+
+export interface MaritimeTradeAction {
+  readonly type: "MARITIME_TRADE";
+  readonly playerId: PlayerId;
+  readonly give: ResourceType;
+  readonly get: ResourceType;
+}
+
+export interface BuyDevCardAction {
+  readonly type: "BUY_DEV_CARD";
+  readonly playerId: PlayerId;
+}
+
+export interface PlayKnightAction {
+  readonly type: "PLAY_DEV_CARD";
+  readonly card: "knight";
+  readonly playerId: PlayerId;
+  readonly hex: Hex;
+  readonly stealFromPlayerId: PlayerId | null;
+}
+
+export interface PlayMonopolyAction {
+  readonly type: "PLAY_DEV_CARD";
+  readonly card: "monopoly";
+  readonly playerId: PlayerId;
+  readonly resource: ResourceType;
+}
+
+export interface PlayRoadBuildingAction {
+  readonly type: "PLAY_DEV_CARD";
+  readonly card: "road_building";
+  readonly playerId: PlayerId;
+  readonly edges: readonly Edge[];
+}
+
+export interface PlayYearOfPlentyAction {
+  readonly type: "PLAY_DEV_CARD";
+  readonly card: "year_of_plenty";
+  readonly playerId: PlayerId;
+  readonly resources: readonly [ResourceType, ResourceType];
+}
+
+export type PlayDevCardAction =
+  PlayKnightAction | PlayMonopolyAction | PlayRoadBuildingAction | PlayYearOfPlentyAction;
+
 export type Action =
   | PlaceSettlementAction
   | PlaceRoadAction
@@ -139,7 +248,15 @@ export type Action =
   | BuildRoadAction
   | BuildSettlementAction
   | BuildCityAction
-  | EndTurnAction;
+  | EndTurnAction
+  | ProposeTradeAction
+  | AcceptTradeAction
+  | RejectTradeAction
+  | CounterTradeAction
+  | CancelTradeAction
+  | MaritimeTradeAction
+  | BuyDevCardAction
+  | PlayDevCardAction;
 
 // --- Events --------------------------------------------------------------
 
@@ -229,6 +346,100 @@ export interface TurnEndedEvent {
   readonly playerId: PlayerId;
 }
 
+export interface TradeProposedEvent {
+  readonly type: "TRADE_PROPOSED";
+  readonly tradeId: string;
+  readonly proposerId: PlayerId;
+  readonly offering: Partial<ResourceHand>;
+  readonly requesting: Partial<ResourceHand>;
+  readonly targetPlayerIds: readonly PlayerId[] | null;
+}
+
+export interface TradeAcceptedEvent {
+  readonly type: "TRADE_ACCEPTED";
+  readonly tradeId: string;
+  readonly proposerId: PlayerId;
+  readonly accepterId: PlayerId;
+}
+
+export interface TradeRejectedEvent {
+  readonly type: "TRADE_REJECTED";
+  readonly tradeId: string;
+  readonly playerId: PlayerId;
+}
+
+export interface TradeCounteredEvent {
+  readonly type: "TRADE_COUNTERED";
+  readonly originalTradeId: string;
+  readonly newTradeId: string;
+  readonly playerId: PlayerId;
+}
+
+export interface TradeCancelledEvent {
+  readonly type: "TRADE_CANCELLED";
+  readonly tradeId: string;
+}
+
+export interface MaritimeTradeExecutedEvent {
+  readonly type: "MARITIME_TRADE_EXECUTED";
+  readonly playerId: PlayerId;
+  readonly gave: ResourceType;
+  readonly gaveAmount: number;
+  readonly got: ResourceType;
+}
+
+export interface DevCardBoughtEvent {
+  readonly type: "DEV_CARD_BOUGHT";
+  readonly playerId: PlayerId;
+  readonly card: DevCardType;
+}
+
+export interface KnightPlayedEvent {
+  readonly type: "KNIGHT_PLAYED";
+  readonly playerId: PlayerId;
+}
+
+export interface MonopolyPlayedEvent {
+  readonly type: "MONOPOLY_PLAYED";
+  readonly playerId: PlayerId;
+  readonly resource: ResourceType;
+  readonly seized: ReadonlyMap<PlayerId, number>;
+}
+
+export interface RoadBuildingPlayedEvent {
+  readonly type: "ROAD_BUILDING_PLAYED";
+  readonly playerId: PlayerId;
+  readonly edges: readonly Edge[];
+}
+
+export interface YearOfPlentyPlayedEvent {
+  readonly type: "YEAR_OF_PLENTY_PLAYED";
+  readonly playerId: PlayerId;
+  readonly resources: readonly [ResourceType, ResourceType];
+}
+
+export interface LongestRoadAwardedEvent {
+  readonly type: "LONGEST_ROAD_AWARDED";
+  readonly playerId: PlayerId;
+  readonly length: number;
+}
+
+export interface LongestRoadLostEvent {
+  readonly type: "LONGEST_ROAD_LOST";
+  readonly playerId: PlayerId;
+}
+
+export interface LargestArmyAwardedEvent {
+  readonly type: "LARGEST_ARMY_AWARDED";
+  readonly playerId: PlayerId;
+  readonly knights: number;
+}
+
+export interface GameEndedEvent {
+  readonly type: "GAME_ENDED";
+  readonly winner: PlayerId;
+}
+
 export type GameEvent =
   | SettlementPlacedEvent
   | RoadPlacedEvent
@@ -244,7 +455,22 @@ export type GameEvent =
   | RobberMovedEvent
   | ResourceStolenEvent
   | TurnStartedEvent
-  | TurnEndedEvent;
+  | TurnEndedEvent
+  | TradeProposedEvent
+  | TradeAcceptedEvent
+  | TradeRejectedEvent
+  | TradeCounteredEvent
+  | TradeCancelledEvent
+  | MaritimeTradeExecutedEvent
+  | DevCardBoughtEvent
+  | KnightPlayedEvent
+  | MonopolyPlayedEvent
+  | RoadBuildingPlayedEvent
+  | YearOfPlentyPlayedEvent
+  | LongestRoadAwardedEvent
+  | LongestRoadLostEvent
+  | LargestArmyAwardedEvent
+  | GameEndedEvent;
 
 export interface ApplySuccess {
   readonly state: GameState;

@@ -139,6 +139,42 @@ describe("full game integration — setup through several rounds (4 players)", (
 
       expect(state.phase).toEqual({ name: "main" });
 
+      // Exercise Phase 3 actions opportunistically, whenever affordable —
+      // proves they're wired into a real multi-turn game, not just isolated
+      // unit fixtures.
+      const actor = state.players.find((p) => p.id === playerId)!;
+      if (
+        state.devDeck.length > 0 &&
+        actor.hand.ore >= 1 &&
+        actor.hand.wheat >= 1 &&
+        actor.hand.sheep >= 1
+      ) {
+        const afterBuy = apply(state, { type: "BUY_DEV_CARD", playerId });
+        expect(afterBuy.state.devDeck.length).toBe(state.devDeck.length - 1);
+        state = afterBuy.state;
+      }
+      if (state.phase.name === "main") {
+        const overstocked = (["wood", "wheat", "sheep", "brick", "ore"] as const).find(
+          (r) => actor.hand[r] >= 4,
+        );
+        if (overstocked) {
+          const target = (["wood", "wheat", "sheep", "brick", "ore"] as const).find(
+            (r) => r !== overstocked,
+          )!;
+          const afterTrade = apply(state, {
+            type: "MARITIME_TRADE",
+            playerId,
+            give: overstocked,
+            get: target,
+          });
+          expect(afterTrade.state.players.find((p) => p.id === playerId)!.hand[overstocked]).toBe(
+            actor.hand[overstocked] - 4,
+          );
+          state = afterTrade.state;
+        }
+      }
+      if (state.phase.name !== "main") break; // a dev card purchase won the game outright
+
       const afterEndTurn = apply(state, { type: "END_TURN", playerId });
       expect(afterEndTurn.state.phase).toEqual({ name: "roll" });
       expect(afterEndTurn.state.diceRoll).toBeNull();

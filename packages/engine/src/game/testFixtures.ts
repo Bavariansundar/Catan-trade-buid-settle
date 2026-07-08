@@ -1,6 +1,7 @@
 import { createRngFromState } from "../rng.js";
 import type { Hex } from "../coordinates.js";
 import type { Board, PlayerId } from "../types.js";
+import { DEV_CARD_DECK } from "./devCards.js";
 import { emptyHand, PIECE_LIMITS, STARTING_BANK } from "./resources.js";
 import type { GameState, Player } from "./types.js";
 
@@ -44,7 +45,14 @@ export function testDesertHex(): Hex {
 }
 
 export function testPlayer(id: PlayerId): Player {
-  return { id, hand: emptyHand(), pieces: { ...PIECE_LIMITS } };
+  return {
+    id,
+    hand: emptyHand(),
+    pieces: { ...PIECE_LIMITS },
+    devCards: [],
+    knightsPlayed: 0,
+    devCardPlayedThisTurn: false,
+  };
 }
 
 /** A ready-to-build-on 2-player game state, past setup, in the main phase. */
@@ -61,6 +69,13 @@ export function testGameState(overrides: Partial<GameState> = {}): GameState {
     phase: { name: "main" },
     rngState: 12345,
     diceRoll: null,
+    devDeck: [...DEV_CARD_DECK],
+    tradeOffers: new Map(),
+    nextTradeId: 0,
+    turnNumber: 1,
+    longestRoadPlayerId: null,
+    largestArmyPlayerId: null,
+    targetVictoryPoints: 10,
     ...overrides,
   };
 }

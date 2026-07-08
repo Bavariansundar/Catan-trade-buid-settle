@@ -2,6 +2,7 @@ import { hexEquals, verticesOfEdge, type Edge, type Vertex } from "../coordinate
 import { generateBoard } from "../board/generate.js";
 import type { PlayerId, RuleError } from "../types.js";
 import { isEdgeOnBoard, isVertexOnBoard, satisfiesDistanceRule } from "./building.js";
+import { DEV_CARD_DECK } from "./devCards.js";
 import {
   addHands,
   emptyHand,
@@ -10,14 +11,20 @@ import {
   STARTING_BANK,
   subtractHands,
 } from "./resources.js";
-import { normalizeSeed } from "../rng.js";
+import { createRng, normalizeSeed, shuffle } from "../rng.js";
 import type { ApplySuccess, GameEvent, GameState, Player, SetupPhase } from "./types.js";
+
+const DEFAULT_TARGET_VICTORY_POINTS = 10;
+const MIN_TARGET_VICTORY_POINTS = 10;
+const MAX_TARGET_VICTORY_POINTS = 14;
 
 export interface CreateGameOptions {
   readonly playerIds: readonly PlayerId[];
   readonly seed: number | string;
   /** Defaults to `seed` — override to vary the board independently of turn RNG. */
   readonly boardSeed?: number | string;
+  /** 10-14; defaults to 10. */
+  readonly targetVictoryPoints?: number;
 }
 
 /**
@@ -34,6 +41,15 @@ export function createGame(options: CreateGameOptions): GameState {
   if (new Set(playerIds).size !== playerIds.length) {
     throw new Error("createGame requires unique player ids");
   }
+  const targetVictoryPoints = options.targetVictoryPoints ?? DEFAULT_TARGET_VICTORY_POINTS;
+  if (
+    targetVictoryPoints < MIN_TARGET_VICTORY_POINTS ||
+    targetVictoryPoints > MAX_TARGET_VICTORY_POINTS
+  ) {
+    throw new Error(
+      `targetVictoryPoints must be between ${String(MIN_TARGET_VICTORY_POINTS)} and ${String(MAX_TARGET_VICTORY_POINTS)}, got ${String(targetVictoryPoints)}`,
+    );
+  }
 
   const board = generateBoard({ seed: options.boardSeed ?? seed });
   const desertTile = board.tiles.find((t) => t.terrain === "desert");
@@ -45,10 +61,15 @@ export function createGame(options: CreateGameOptions): GameState {
     id,
     hand: emptyHand(),
     pieces: { ...PIECE_LIMITS },
+    devCards: [],
+    knightsPlayed: 0,
+    devCardPlayedThisTurn: false,
   }));
 
   const order = [...playerIds, ...[...playerIds].reverse()];
   const gameRngSeed = typeof seed === "string" ? `${seed}:turns` : seed + 1;
+  const devDeckRngSeed = typeof seed === "string" ? `${seed}:devdeck` : seed + 2;
+  const devDeck = shuffle(DEV_CARD_DECK, createRng(devDeckRngSeed));
 
   const phase: SetupPhase = {
     name: "setup",
@@ -69,6 +90,13 @@ export function createGame(options: CreateGameOptions): GameState {
     phase,
     rngState: normalizeSeed(gameRngSeed),
     diceRoll: null,
+    devDeck,
+    tradeOffers: new Map(),
+    nextTradeId: 0,
+    turnNumber: 0,
+    longestRoadPlayerId: null,
+    largestArmyPlayerId: null,
+    targetVictoryPoints,
   };
 }
 

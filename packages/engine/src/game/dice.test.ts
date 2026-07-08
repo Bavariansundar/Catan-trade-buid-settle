@@ -92,11 +92,17 @@ describe("pendingDiscards", () => {
           id: "p1",
           hand: { wood: 5, wheat: 4, sheep: 0, brick: 0, ore: 0 },
           pieces: { settlements: 5, cities: 4, roads: 15 },
+          devCards: [],
+          knightsPlayed: 0,
+          devCardPlayedThisTurn: false,
         }, // 9 cards
         {
           id: "p2",
           hand: { wood: 3, wheat: 0, sheep: 0, brick: 0, ore: 0 },
           pieces: { settlements: 5, cities: 4, roads: 15 },
+          devCards: [],
+          knightsPlayed: 0,
+          devCardPlayedThisTurn: false,
         }, // 3 cards
       ],
     });
@@ -146,11 +152,17 @@ describe("ROLL_DICE via applyAction", () => {
           id: "p1",
           hand: { wood: 5, wheat: 4, sheep: 0, brick: 0, ore: 0 },
           pieces: { settlements: 5, cities: 4, roads: 15 },
+          devCards: [],
+          knightsPlayed: 0,
+          devCardPlayedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0 },
           pieces: { settlements: 5, cities: 4, roads: 15 },
+          devCards: [],
+          knightsPlayed: 0,
+          devCardPlayedThisTurn: false,
         },
       ],
     });

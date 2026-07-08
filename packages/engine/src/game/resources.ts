@@ -31,6 +31,7 @@ export const BUILD_COSTS = {
   road: { wood: 1, brick: 1 },
   settlement: { wood: 1, brick: 1, wheat: 1, sheep: 1 },
   city: { ore: 3, wheat: 2 },
+  devCard: { ore: 1, wheat: 1, sheep: 1 },
 } as const satisfies Record<string, Partial<ResourceHand>>;
 
 export const PIECE_LIMITS = {

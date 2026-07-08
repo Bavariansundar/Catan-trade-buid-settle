@@ -61,7 +61,11 @@ export function discard(
   return { state: { ...state, players, bank, phase }, events };
 }
 
-function eligibleStealTargets(state: GameState, hex: Hex, actingPlayerId: PlayerId): PlayerId[] {
+export function eligibleStealTargets(
+  state: GameState,
+  hex: Hex,
+  actingPlayerId: PlayerId,
+): PlayerId[] {
   const targets = new Set<PlayerId>();
   for (const vertex of verticesOfHex(hex)) {
     const building = state.buildings.get(vertex.id);
@@ -72,18 +76,19 @@ function eligibleStealTargets(state: GameState, hex: Hex, actingPlayerId: Player
   return [...targets];
 }
 
-export function validateMoveRobber(
+/**
+ * The robber-move mechanics shared by a post-7-roll MOVE_ROBBER and a played
+ * knight card: must move to a new on-board hex, and must steal from an
+ * eligible adjacent player if any exist. Does NOT check phase/turn — callers
+ * (validateMoveRobber for the dedicated phase, devCards.ts for knights)
+ * apply their own gating on top of this.
+ */
+export function validateRobberMovementCore(
   state: GameState,
   playerId: PlayerId,
   hex: Hex,
   stealFromPlayerId: PlayerId | null,
 ): RuleError | null {
-  if (state.phase.name !== "robber") {
-    return { code: "WRONG_PHASE", message: "Not expecting a robber move right now" };
-  }
-  if (state.players[state.currentPlayerIndex]?.id !== playerId) {
-    return { code: "NOT_YOUR_TURN", message: `It is not ${playerId}'s turn to move the robber` };
-  }
   const onBoard = state.board.tiles.some((t) => hexKey(t.hex) === hexKey(hex));
   if (!onBoard) {
     return { code: "OUT_OF_BOUNDS", message: `Hex ${hexKey(hex)} is not on the board` };
@@ -111,8 +116,27 @@ export function validateMoveRobber(
   return null;
 }
 
-/** Assumes {@link validateMoveRobber} already passed. */
-export function moveRobber(
+export function validateMoveRobber(
+  state: GameState,
+  playerId: PlayerId,
+  hex: Hex,
+  stealFromPlayerId: PlayerId | null,
+): RuleError | null {
+  if (state.phase.name !== "robber") {
+    return { code: "WRONG_PHASE", message: "Not expecting a robber move right now" };
+  }
+  if (state.players[state.currentPlayerIndex]?.id !== playerId) {
+    return { code: "NOT_YOUR_TURN", message: `It is not ${playerId}'s turn to move the robber` };
+  }
+  return validateRobberMovementCore(state, playerId, hex, stealFromPlayerId);
+}
+
+/**
+ * The robber-move + steal transform, leaving `phase` untouched — callers
+ * decide what phase follows (moveRobber() below lands in "main"; a played
+ * knight card stays in "main" throughout).
+ */
+export function applyRobberMovementCore(
   state: GameState,
   playerId: PlayerId,
   hex: Hex,
@@ -144,5 +168,16 @@ export function moveRobber(
     });
   }
 
-  return { state: { ...state, robber: hex, players, rngState, phase: { name: "main" } }, events };
+  return { state: { ...state, robber: hex, players, rngState }, events };
+}
+
+/** Assumes {@link validateMoveRobber} already passed. */
+export function moveRobber(
+  state: GameState,
+  playerId: PlayerId,
+  hex: Hex,
+  stealFromPlayerId: PlayerId | null,
+): ApplySuccess {
+  const result = applyRobberMovementCore(state, playerId, hex, stealFromPlayerId);
+  return { state: { ...result.state, phase: { name: "main" } }, events: result.events };
 }
