@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   edgeAt,
   edgesOfHex,
+  edgesOfVertex,
   hexDistance,
   hexEquals,
   hexesWithinRadius,
   neighbor,
+  neighborVertices,
   neighbors,
   vertexAt,
   verticesOfEdge,
@@ -156,6 +158,45 @@ describe("verticesOfEdge", () => {
       for (const edge of edgesOfHex(hex)) {
         // Should not throw, and should return exactly 2 vertices
         expect(() => verticesOfEdge(edge)).not.toThrow();
+      }
+    }
+  });
+});
+
+describe("edgesOfVertex / neighborVertices", () => {
+  it("every vertex has exactly 3 distinct edges", () => {
+    const vertex = vertexAt({ q: 0, r: 0 }, 0);
+    const edges = edgesOfVertex(vertex);
+    expect(edges).toHaveLength(3);
+    expect(new Set(edges.map((e) => e.id)).size).toBe(3);
+  });
+
+  it("every edge of a vertex has that vertex as one of its 2 endpoints", () => {
+    const vertex = vertexAt({ q: 1, r: -2 }, 3);
+    for (const edge of edgesOfVertex(vertex)) {
+      const endpoints = verticesOfEdge(edge);
+      expect(endpoints.some((v) => v.id === vertex.id)).toBe(true);
+    }
+  });
+
+  it("every vertex has exactly 3 distinct neighbor vertices", () => {
+    const vertex = vertexAt({ q: 0, r: 0 }, 0);
+    const neighborsOfVertex = neighborVertices(vertex);
+    expect(neighborsOfVertex).toHaveLength(3);
+    expect(new Set(neighborsOfVertex.map((v) => v.id)).size).toBe(3);
+    for (const n of neighborsOfVertex) {
+      expect(n.id).not.toBe(vertex.id);
+    }
+  });
+
+  it("neighborVertices is symmetric: if B is a neighbor of A, A is a neighbor of B", () => {
+    const hexes = hexesWithinRadius({ q: 0, r: 0 }, 2);
+    for (const hex of hexes) {
+      for (const vertex of verticesOfHex(hex)) {
+        for (const neighborVertex of neighborVertices(vertex)) {
+          const backNeighborIds = neighborVertices(neighborVertex).map((v) => v.id);
+          expect(backNeighborIds).toContain(vertex.id);
+        }
       }
     }
   });

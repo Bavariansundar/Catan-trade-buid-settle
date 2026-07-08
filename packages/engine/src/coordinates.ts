@@ -133,3 +133,24 @@ export function verticesOfEdge(edge: Edge): [Vertex, Vertex] {
   const prevDirection = ((direction + 5) % 6) as HexCornerDirection;
   return [vertexAt(a, prevDirection), vertexAt(a, direction)];
 }
+
+/**
+ * The 3 edges meeting at a vertex. The 3 hexes touching a vertex are always
+ * pairwise adjacent (they form a small triangle around that point), so the
+ * edges are exactly the 3 pairs among `vertex.hexes`.
+ */
+export function edgesOfVertex(vertex: Vertex): [Edge, Edge, Edge] {
+  const [a, b, c] = vertex.hexes;
+  return [edgeBetween(a, b), edgeBetween(b, c), edgeBetween(a, c)];
+}
+
+/** The 3 vertices directly connected to `vertex` by a single edge. */
+export function neighborVertices(vertex: Vertex): Vertex[] {
+  const result: Vertex[] = [];
+  for (const edge of edgesOfVertex(vertex)) {
+    for (const endpoint of verticesOfEdge(edge)) {
+      if (endpoint.id !== vertex.id) result.push(endpoint);
+    }
+  }
+  return result;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createRng, shuffle } from "./rng.js";
+import { createRng, createRngFromState, normalizeSeed, shuffle } from "./rng.js";
 
 describe("createRng", () => {
   it("is deterministic: same numeric seed produces the same sequence", () => {
@@ -43,6 +43,29 @@ describe("createRng", () => {
       expect(value).toBeLessThan(12);
       expect(Number.isInteger(value)).toBe(true);
     }
+  });
+});
+
+describe("createRngFromState / getState", () => {
+  it("resuming from a saved state continues the same sequence as if uninterrupted", () => {
+    const uninterrupted = createRng("resume-test");
+    const fullSequence = Array.from({ length: 10 }, () => uninterrupted.next());
+
+    const rng = createRng("resume-test");
+    const firstHalf = Array.from({ length: 5 }, () => rng.next());
+    const savedState = rng.getState();
+
+    const resumed = createRngFromState(savedState);
+    const secondHalf = Array.from({ length: 5 }, () => resumed.next());
+
+    expect([...firstHalf, ...secondHalf]).toEqual(fullSequence);
+  });
+
+  it("createRng(seed) is equivalent to createRngFromState(normalizeSeed(seed))", () => {
+    const a = createRng("some-seed");
+    const b = createRngFromState(normalizeSeed("some-seed"));
+    expect(a.next()).toBe(b.next());
+    expect(a.getState()).toBe(b.getState());
   });
 });
 

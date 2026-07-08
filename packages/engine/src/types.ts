@@ -23,38 +23,7 @@ export interface Board {
   readonly harbors: readonly Harbor[];
 }
 
-export interface Player {
-  readonly id: PlayerId;
-}
-
-export type GamePhase = "setup" | "playing" | "ended";
-
-/**
- * Placeholder — Phase 2 will flesh this out into the full turn state
- * machine (dice, resources, dev card deck, current player/phase, etc.).
- * Defined now so board generation has a home and later phases extend
- * rather than redesign it.
- */
-export interface GameState {
-  readonly board: Board;
-  readonly players: readonly Player[];
-  readonly phase: GamePhase;
-}
-
 export interface RuleError {
   readonly code: string;
   readonly message: string;
-}
-
-/**
- * Placeholder discriminated-union base — Phase 2 replaces `type: string`
- * with concrete action/event kinds (ROLL_DICE, BUILD_ROAD, etc.).
- */
-export interface Action {
-  readonly type: string;
-  readonly playerId: PlayerId;
-}
-
-export interface GameEvent {
-  readonly type: string;
 }
