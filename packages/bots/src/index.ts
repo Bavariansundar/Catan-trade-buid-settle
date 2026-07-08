@@ -1,5 +1,6 @@
-import { placeholder } from "@hexhaven/engine";
+import { generateBoard } from "@hexhaven/engine";
 
-export function botsPlaceholder(): string {
-  return `bots+${placeholder()}`;
+/** Placeholder — Phase 7 replaces this with the actual bot tiers. */
+export function botsPlaceholder(): number {
+  return generateBoard({ seed: "bots-scaffold" }).tiles.length;
 }
