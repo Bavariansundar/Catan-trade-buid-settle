@@ -43,7 +43,14 @@ describe("createGame", () => {
     const state = createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: 1 });
     for (const player of state.players) {
       expect(player.hand).toEqual({ wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0 });
-      expect(player.pieces).toEqual({ settlements: 5, cities: 4, roads: 15, ships: 0 });
+      expect(player.pieces).toEqual({
+        settlements: 5,
+        cities: 4,
+        roads: 15,
+        ships: 0,
+        knights: 0,
+        cityWalls: 0,
+      });
     }
   });
 

@@ -135,6 +135,7 @@ function endTurn(
     ...state,
     currentPlayerIndex: nextIndex,
     diceRoll: null,
+    eventRoll: null,
     phase: { name: "roll" },
     turnNumber: state.turnNumber + 1,
     tradeOffers: new Map(), // open offers only ever make sense on the proposer's own turn

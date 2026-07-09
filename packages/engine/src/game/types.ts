@@ -3,6 +3,39 @@ import type { Board, PlayerId, ResourceType, RuleError, TerrainType } from "../t
 
 export type ResourceHand = Record<ResourceType, number>;
 
+/** Cities & Knights-style only — see docs/rules/cities-knights-style.md §1. */
+export type CommodityType = "cloth" | "coin" | "paper";
+export type CommodityHand = Record<CommodityType, number>;
+
+/** Cities & Knights-style only — see docs/rules/cities-knights-style.md §2. */
+export type Track = "trade" | "politics" | "science";
+export interface CityImprovements {
+  readonly trade: number; // 0-5
+  readonly politics: number;
+  readonly science: number;
+}
+
+/** Cities & Knights-style only — see docs/rules/cities-knights-style.md §3. */
+export type TradeCardType = "bazaar" | "toll_bridge" | "windfall" | "harbor_master";
+export type PoliticsCardType = "mobilize" | "bribery" | "sabotage" | "founding_charter";
+export type ScienceCardType = "blueprint" | "breakthrough" | "apprentice" | "grand_library";
+export type ProgressCardType = TradeCardType | PoliticsCardType | ScienceCardType;
+
+export interface ProgressCardInstance {
+  readonly type: ProgressCardType;
+}
+
+/** Cities & Knights-style only: the event die's 6th-die face. */
+export type EventFace = "trade" | "politics" | "science" | "barbarian";
+
+/** Cities & Knights-style only — see docs/rules/cities-knights-style.md §5. */
+export type KnightLevel = 1 | 2 | 3; // Basic / Strong / Mighty
+export interface KnightInstance {
+  readonly playerId: PlayerId;
+  readonly level: KnightLevel;
+  readonly active: boolean;
+}
+
 export interface PlayerPieceSupply {
   /** Settlements left to place; increases by 1 when one is upgraded to a city. */
   readonly settlements: number;
@@ -10,6 +43,10 @@ export interface PlayerPieceSupply {
   readonly roads: number;
   /** Seafarers-style only; 0 for base and five-six-players. */
   readonly ships: number;
+  /** Cities & Knights-style only; 0 otherwise. */
+  readonly knights: number;
+  /** Cities & Knights-style only; 0 otherwise. */
+  readonly cityWalls: number;
 }
 
 export type DevCardType =
@@ -30,6 +67,17 @@ export interface Player {
   readonly devCardPlayedThisTurn: boolean;
   /** Seafarers-style only: has this player already relocated an open ship this turn? */
   readonly shipMovedThisTurn: boolean;
+
+  // --- Cities & Knights-style only (see docs/rules/cities-knights-style.md) ---
+  readonly commodities: CommodityHand;
+  readonly cityImprovements: CityImprovements;
+  /** Playable progress cards held; excludes landmarks, which score immediately on draw. */
+  readonly progressCards: readonly ProgressCardInstance[];
+  readonly landmarks: readonly ProgressCardType[];
+  /** Banked Apprentice-card discount, consumed by the next IMPROVE_CITY_TRACK. */
+  readonly apprenticeCredit: boolean;
+  /** Number of times this player was a top defender in a successful barbarian defense (+1 VP each). */
+  readonly barbarianDefenseWins: number;
 }
 
 export type BuildingType = "settlement" | "city";
@@ -85,8 +133,26 @@ export interface SpecialBuildPhase {
   readonly endedPlayerId: PlayerId;
 }
 
+/**
+ * Cities & Knights-style only: a failed barbarian defense forces one or more
+ * players to downgrade a city to a settlement — see
+ * docs/rules/cities-knights-style.md §6.
+ */
+export interface BarbarianTributePhase {
+  readonly name: "barbarianTribute";
+  /** Player -> cities still owed; resolves to `main` once empty. */
+  readonly pending: ReadonlyMap<PlayerId, number>;
+}
+
 export type Phase =
-  SetupPhase | RollPhase | DiscardPhase | RobberPhase | MainPhase | EndedPhase | SpecialBuildPhase;
+  | SetupPhase
+  | RollPhase
+  | DiscardPhase
+  | RobberPhase
+  | MainPhase
+  | EndedPhase
+  | SpecialBuildPhase
+  | BarbarianTributePhase;
 
 export interface TradeOffer {
   readonly id: string;
@@ -134,6 +200,28 @@ export interface GameState {
   readonly islandBonusAwarded: ReadonlyMap<string, PlayerId>;
   /** Hexes belonging to the starting island(s) — never eligible for the island bonus. */
   readonly homeIslandHexes: readonly Hex[];
+
+  // --- Cities & Knights-style only (see docs/rules/cities-knights-style.md) ---
+  readonly commodityBank: CommodityHand;
+  readonly knights: ReadonlyMap<string, KnightInstance>; // keyed by Vertex.id
+  readonly cityWalls: ReadonlySet<string>; // keyed by Vertex.id — cities with a wall built
+  readonly barbarianTrackPosition: number;
+  readonly metropolises: ReadonlyMap<
+    Track,
+    { readonly playerId: PlayerId; readonly vertex: string }
+  >;
+  readonly tradeDeck: readonly TradeCardType[];
+  readonly politicsDeck: readonly PoliticsCardType[];
+  readonly scienceDeck: readonly ScienceCardType[];
+  /** This turn's event die face, if rolled; reset to null at the start of each turn. */
+  readonly eventRoll: EventFace | null;
+  /**
+   * Set only in the rare case a barbarian tribute becomes owed on the same
+   * roll a 7 also triggered discard/robber — resolved once that phase
+   * finishes (`discard` -> `robber` -> `barbarianTribute` -> `main`), per
+   * docs/rules/cities-knights-style.md §3.
+   */
+  readonly deferredBarbarianTribute: ReadonlyMap<PlayerId, number> | null;
 }
 
 // --- Actions -----------------------------------------------------------
@@ -298,6 +386,144 @@ export interface PlayYearOfPlentyAction {
 export type PlayDevCardAction =
   PlayKnightAction | PlayMonopolyAction | PlayRoadBuildingAction | PlayYearOfPlentyAction;
 
+// --- Cities & Knights-style actions (see docs/rules/cities-knights-style.md) ---
+
+export interface ImproveCityTrackAction {
+  readonly type: "IMPROVE_CITY_TRACK";
+  readonly playerId: PlayerId;
+  readonly track: Track;
+}
+
+export interface BuyKnightAction {
+  readonly type: "BUY_KNIGHT";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface ActivateKnightAction {
+  readonly type: "ACTIVATE_KNIGHT";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface PromoteKnightAction {
+  readonly type: "PROMOTE_KNIGHT";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface MoveKnightAction {
+  readonly type: "MOVE_KNIGHT";
+  readonly playerId: PlayerId;
+  readonly fromVertex: Vertex;
+  readonly toVertex: Vertex;
+}
+
+export interface ChaseRobberAction {
+  readonly type: "CHASE_ROBBER";
+  readonly playerId: PlayerId;
+  readonly knightVertex: Vertex;
+  readonly toHex: Hex;
+}
+
+export interface BuildCityWallAction {
+  readonly type: "BUILD_CITY_WALL";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface BuildMetropolisAction {
+  readonly type: "BUILD_METROPOLIS";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+  readonly track: Track;
+}
+
+export interface ChooseCityToDowngradeAction {
+  readonly type: "CHOOSE_CITY_TO_DOWNGRADE";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface PlayBazaarAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "bazaar";
+  readonly playerId: PlayerId;
+  readonly give: ResourceType;
+  readonly get: ResourceType;
+}
+
+export interface PlayTollBridgeAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "toll_bridge";
+  readonly playerId: PlayerId;
+  /** Two 2:1 bank trades, executed back to back, ignoring port ownership. */
+  readonly trades: readonly [
+    { readonly give: ResourceType; readonly get: ResourceType },
+    { readonly give: ResourceType; readonly get: ResourceType },
+  ];
+}
+
+export interface PlayWindfallAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "windfall";
+  readonly playerId: PlayerId;
+  readonly resource: ResourceType;
+}
+
+export interface PlayMobilizeAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "mobilize";
+  readonly playerId: PlayerId;
+}
+
+export interface PlayBriberyAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "bribery";
+  readonly playerId: PlayerId;
+  readonly targetPlayerId: PlayerId;
+  readonly commodity: CommodityType;
+}
+
+export interface PlaySabotageAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "sabotage";
+  readonly playerId: PlayerId;
+  readonly targetPlayerId: PlayerId;
+  readonly targetVertex: Vertex;
+}
+
+export interface PlayBlueprintAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "blueprint";
+  readonly playerId: PlayerId;
+  readonly edges: readonly Edge[];
+}
+
+export interface PlayBreakthroughAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "breakthrough";
+  readonly playerId: PlayerId;
+  readonly track: Track;
+}
+
+export interface PlayApprenticeAction {
+  readonly type: "PLAY_PROGRESS_CARD";
+  readonly card: "apprentice";
+  readonly playerId: PlayerId;
+}
+
+export type PlayProgressCardAction =
+  | PlayBazaarAction
+  | PlayTollBridgeAction
+  | PlayWindfallAction
+  | PlayMobilizeAction
+  | PlayBriberyAction
+  | PlaySabotageAction
+  | PlayBlueprintAction
+  | PlayBreakthroughAction
+  | PlayApprenticeAction;
+
 export type Action =
   | PlaceSettlementAction
   | PlaceRoadAction
@@ -319,7 +545,17 @@ export type Action =
   | CancelTradeAction
   | MaritimeTradeAction
   | BuyDevCardAction
-  | PlayDevCardAction;
+  | PlayDevCardAction
+  | ImproveCityTrackAction
+  | BuyKnightAction
+  | ActivateKnightAction
+  | PromoteKnightAction
+  | MoveKnightAction
+  | ChaseRobberAction
+  | BuildCityWallAction
+  | BuildMetropolisAction
+  | ChooseCityToDowngradeAction
+  | PlayProgressCardAction;
 
 // --- Events --------------------------------------------------------------
 
@@ -551,6 +787,120 @@ export interface GameEndedEvent {
   readonly winner: PlayerId;
 }
 
+// --- Cities & Knights-style events (see docs/rules/cities-knights-style.md) ---
+
+export interface EventDieRolledEvent {
+  readonly type: "EVENT_DIE_ROLLED";
+  readonly face: EventFace;
+}
+
+export interface CityTrackImprovedEvent {
+  readonly type: "CITY_TRACK_IMPROVED";
+  readonly playerId: PlayerId;
+  readonly track: Track;
+  readonly newLevel: number;
+}
+
+export interface ProgressCardDrawnEvent {
+  readonly type: "PROGRESS_CARD_DRAWN";
+  readonly playerId: PlayerId;
+  readonly deck: Track;
+  readonly card: ProgressCardType;
+}
+
+export interface LandmarkAcquiredEvent {
+  readonly type: "LANDMARK_ACQUIRED";
+  readonly playerId: PlayerId;
+  readonly card: ProgressCardType;
+}
+
+export interface ProgressCardPlayedEvent {
+  readonly type: "PROGRESS_CARD_PLAYED";
+  readonly playerId: PlayerId;
+  readonly card: ProgressCardType;
+}
+
+export interface KnightBoughtEvent {
+  readonly type: "KNIGHT_BOUGHT";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface KnightActivatedEvent {
+  readonly type: "KNIGHT_ACTIVATED";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface KnightPromotedEvent {
+  readonly type: "KNIGHT_PROMOTED";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+  readonly newLevel: KnightLevel;
+}
+
+export interface KnightMovedEvent {
+  readonly type: "KNIGHT_MOVED";
+  readonly playerId: PlayerId;
+  readonly fromVertex: Vertex;
+  readonly toVertex: Vertex;
+}
+
+export interface KnightDeactivatedEvent {
+  readonly type: "KNIGHT_DEACTIVATED";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface RobberChasedEvent {
+  readonly type: "ROBBER_CHASED";
+  readonly playerId: PlayerId;
+  readonly fromHex: Hex;
+  readonly toHex: Hex;
+}
+
+export interface BarbarianAdvancedEvent {
+  readonly type: "BARBARIAN_ADVANCED";
+  readonly position: number;
+}
+
+export interface BarbarianAttackDefendedEvent {
+  readonly type: "BARBARIAN_ATTACK_DEFENDED";
+  readonly rewardedPlayerIds: readonly PlayerId[];
+}
+
+export interface BarbarianAttackLostEvent {
+  readonly type: "BARBARIAN_ATTACK_LOST";
+  readonly losingPlayerIds: readonly PlayerId[];
+}
+
+export interface CityDowngradedEvent {
+  readonly type: "CITY_DOWNGRADED";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface CityWallBuiltEvent {
+  readonly type: "CITY_WALL_BUILT";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+}
+
+export interface MetropolisBuiltEvent {
+  readonly type: "METROPOLIS_BUILT";
+  readonly playerId: PlayerId;
+  readonly vertex: Vertex;
+  readonly track: Track;
+}
+
+export interface MetropolisTransferredEvent {
+  readonly type: "METROPOLIS_TRANSFERRED";
+  readonly fromPlayerId: PlayerId;
+  readonly toPlayerId: PlayerId;
+  readonly track: Track;
+  readonly vertex: Vertex;
+}
+
 export type GameEvent =
   | SettlementPlacedEvent
   | RoadPlacedEvent
@@ -589,7 +939,25 @@ export type GameEvent =
   | LongestRoadAwardedEvent
   | LongestRoadLostEvent
   | LargestArmyAwardedEvent
-  | GameEndedEvent;
+  | GameEndedEvent
+  | EventDieRolledEvent
+  | CityTrackImprovedEvent
+  | ProgressCardDrawnEvent
+  | LandmarkAcquiredEvent
+  | ProgressCardPlayedEvent
+  | KnightBoughtEvent
+  | KnightActivatedEvent
+  | KnightPromotedEvent
+  | KnightMovedEvent
+  | KnightDeactivatedEvent
+  | RobberChasedEvent
+  | BarbarianAdvancedEvent
+  | BarbarianAttackDefendedEvent
+  | BarbarianAttackLostEvent
+  | CityDowngradedEvent
+  | CityWallBuiltEvent
+  | MetropolisBuiltEvent
+  | MetropolisTransferredEvent;
 
 export interface ApplySuccess {
   readonly state: GameState;

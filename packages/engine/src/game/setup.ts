@@ -2,7 +2,7 @@ import { hexEquals, verticesOfEdge, type Edge, type Vertex } from "../coordinate
 import type { PlayerId, RuleError } from "../types.js";
 import { isEdgeOnBoard, isVertexOnBoard, satisfiesDistanceRule } from "./building.js";
 import { resolveBoardGenerator, resolveConfig, type RuleModule } from "./module.js";
-import { addHands, emptyHand, handTotal, subtractHands } from "./resources.js";
+import { addHands, emptyCommodityHand, emptyHand, handTotal, subtractHands } from "./resources.js";
 import { createRng, normalizeSeed, shuffle } from "../rng.js";
 import type { ApplySuccess, GameEvent, GameState, Player, SetupPhase } from "./types.js";
 
@@ -56,6 +56,12 @@ export function createGame(modules: readonly RuleModule[], options: CreateGameOp
     knightsPlayed: 0,
     devCardPlayedThisTurn: false,
     shipMovedThisTurn: false,
+    commodities: emptyCommodityHand(),
+    cityImprovements: { trade: 0, politics: 0, science: 0 },
+    progressCards: [],
+    landmarks: [],
+    apprenticeCredit: false,
+    barbarianDefenseWins: 0,
   }));
 
   const order = [...playerIds, ...[...playerIds].reverse()];
@@ -95,6 +101,16 @@ export function createGame(modules: readonly RuleModule[], options: CreateGameOp
     discoveryBag: [],
     islandBonusAwarded: new Map(),
     homeIslandHexes: [],
+    commodityBank: emptyCommodityHand(),
+    knights: new Map(),
+    cityWalls: new Set(),
+    barbarianTrackPosition: 0,
+    metropolises: new Map(),
+    tradeDeck: [],
+    politicsDeck: [],
+    scienceDeck: [],
+    eventRoll: null,
+    deferredBarbarianTribute: null,
   };
 
   for (const module of modules) {

@@ -171,7 +171,13 @@ export function applyRobberMovementCore(
   return { state: { ...state, robber: hex, players, rngState }, events };
 }
 
-/** Assumes {@link validateMoveRobber} already passed. */
+/**
+ * Assumes {@link validateMoveRobber} already passed. Normally resolves to
+ * `main`; if a Cities & Knights-style barbarian tribute was deferred behind
+ * this same roll's 7 (see docs/rules/cities-knights-style.md §3), resolves
+ * to `barbarianTribute` instead — harmless for every other module, since
+ * `deferredBarbarianTribute` is always `null` there.
+ */
 export function moveRobber(
   state: GameState,
   playerId: PlayerId,
@@ -179,5 +185,12 @@ export function moveRobber(
   stealFromPlayerId: PlayerId | null,
 ): ApplySuccess {
   const result = applyRobberMovementCore(state, playerId, hex, stealFromPlayerId);
-  return { state: { ...result.state, phase: { name: "main" } }, events: result.events };
+  const deferred = result.state.deferredBarbarianTribute;
+  const phase = deferred
+    ? ({ name: "barbarianTribute", pending: deferred } as const)
+    : ({ name: "main" } as const);
+  return {
+    state: { ...result.state, phase, deferredBarbarianTribute: null },
+    events: result.events,
+  };
 }

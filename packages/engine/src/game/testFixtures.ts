@@ -2,7 +2,7 @@ import { createRngFromState } from "../rng.js";
 import type { Hex } from "../coordinates.js";
 import type { Board, PlayerId } from "../types.js";
 import { DEV_CARD_DECK } from "./devCards.js";
-import { emptyHand, PIECE_LIMITS, STARTING_BANK } from "./resources.js";
+import { emptyCommodityHand, emptyHand, PIECE_LIMITS, STARTING_BANK } from "./resources.js";
 import type { GameState, Player } from "./types.js";
 
 // Explicit hex coordinates (see AXIAL_DIRECTIONS in coordinates.ts) — not
@@ -53,6 +53,12 @@ export function testPlayer(id: PlayerId): Player {
     knightsPlayed: 0,
     devCardPlayedThisTurn: false,
     shipMovedThisTurn: false,
+    commodities: emptyCommodityHand(),
+    cityImprovements: { trade: 0, politics: 0, science: 0 },
+    progressCards: [],
+    landmarks: [],
+    apprenticeCredit: false,
+    barbarianDefenseWins: 0,
   };
 }
 
@@ -83,6 +89,16 @@ export function testGameState(overrides: Partial<GameState> = {}): GameState {
     discoveryBag: [],
     islandBonusAwarded: new Map(),
     homeIslandHexes: [],
+    commodityBank: emptyCommodityHand(),
+    knights: new Map(),
+    cityWalls: new Set(),
+    barbarianTrackPosition: 0,
+    metropolises: new Map(),
+    tradeDeck: [],
+    politicsDeck: [],
+    scienceDeck: [],
+    eventRoll: null,
+    deferredBarbarianTribute: null,
     ...overrides,
   };
 }

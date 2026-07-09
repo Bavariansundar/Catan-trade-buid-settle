@@ -10,11 +10,17 @@ function playerWithHand(id: string, hand: Partial<Record<string, number>>) {
   return {
     id,
     hand: { wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0, ...hand },
-    pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
+    pieces: { settlements: 5, cities: 4, roads: 15, ships: 0, knights: 0, cityWalls: 0 },
     devCards: [],
     knightsPlayed: 0,
     devCardPlayedThisTurn: false,
     shipMovedThisTurn: false,
+    commodities: { cloth: 0, coin: 0, paper: 0 },
+    cityImprovements: { trade: 0, politics: 0, science: 0 },
+    progressCards: [],
+    landmarks: [],
+    apprenticeCredit: false,
+    barbarianDefenseWins: 0,
   };
 }
 
