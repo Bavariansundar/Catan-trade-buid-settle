@@ -1,0 +1,76 @@
+import type { GameState } from "@hexhaven/engine";
+
+/**
+ * `GameState` uses `ReadonlyMap`/`ReadonlySet` throughout (buildings, roads,
+ * trade offers, ships, knights, ...) so it doesn't round-trip through plain
+ * `JSON.stringify`/`parse` — this pair converts every such field to/from
+ * plain JSON (arrays of entries for Maps, arrays for Sets) so it can be
+ * cached in Redis. See docs/architecture/server.md §4a.
+ *
+ * Deliberately explicit rather than a generic "walk and convert every Map/
+ * Set" reflection helper: `GameState`'s exact shape is enumerated here by
+ * hand, matching every module through Phase 6. A future engine module that
+ * adds a new Map/Set field to `GameState` (or nested inside a `Phase`
+ * variant, as `discard`/`barbarianTribute`'s `pending` already is) needs
+ * this file updated too — that's an acceptable, explicit coupling given how
+ * rarely the engine's top-level state shape actually changes.
+ */
+
+type Json = unknown;
+
+function mapToEntries<K, V>(map: ReadonlyMap<K, V>): [K, V][] {
+  return [...map.entries()];
+}
+
+export function serializeGameState(state: GameState): Json {
+  const { phase, ...rest } = state;
+
+  let serializedPhase: Json = phase;
+  if (phase.name === "discard" || phase.name === "barbarianTribute") {
+    serializedPhase = { ...phase, pending: mapToEntries(phase.pending) };
+  }
+
+  return {
+    ...rest,
+    buildings: mapToEntries(state.buildings),
+    roads: mapToEntries(state.roads),
+    tradeOffers: mapToEntries(state.tradeOffers),
+    ships: mapToEntries(state.ships),
+    hiddenHexes: mapToEntries(state.hiddenHexes),
+    islandBonusAwarded: mapToEntries(state.islandBonusAwarded),
+    knights: mapToEntries(state.knights),
+    cityWalls: [...state.cityWalls],
+    metropolises: mapToEntries(state.metropolises),
+    deferredBarbarianTribute: state.deferredBarbarianTribute
+      ? mapToEntries(state.deferredBarbarianTribute)
+      : null,
+    phase: serializedPhase,
+  };
+}
+
+export function deserializeGameState(json: Json): GameState {
+  const data = json as Record<string, unknown>;
+  const phaseData = data["phase"] as Record<string, unknown>;
+
+  let phase = phaseData;
+  if (phaseData["name"] === "discard" || phaseData["name"] === "barbarianTribute") {
+    phase = { ...phaseData, pending: new Map(phaseData["pending"] as [string, number][]) };
+  }
+
+  return {
+    ...data,
+    buildings: new Map(data["buildings"] as [string, unknown][]),
+    roads: new Map(data["roads"] as [string, unknown][]),
+    tradeOffers: new Map(data["tradeOffers"] as [string, unknown][]),
+    ships: new Map(data["ships"] as [string, unknown][]),
+    hiddenHexes: new Map(data["hiddenHexes"] as [string, unknown][]),
+    islandBonusAwarded: new Map(data["islandBonusAwarded"] as [string, unknown][]),
+    knights: new Map(data["knights"] as [string, unknown][]),
+    cityWalls: new Set(data["cityWalls"] as string[]),
+    metropolises: new Map(data["metropolises"] as [string, unknown][]),
+    deferredBarbarianTribute: data["deferredBarbarianTribute"]
+      ? new Map(data["deferredBarbarianTribute"] as [string, number][])
+      : null,
+    phase,
+  } as unknown as GameState;
+}

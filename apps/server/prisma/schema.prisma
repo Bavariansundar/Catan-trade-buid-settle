@@ -1,0 +1,135 @@
+// Hexhaven server schema — see docs/architecture/server.md for the design
+// rationale (event-sourced GameAction log as the sole source of truth,
+// rotating refresh tokens, etc.).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Pinned to Prisma 6.x (see package.json) rather than 7's driver-adapter
+// model — this classic `url = env(...)` datasource style is what
+// CLAUDE.md's "PostgreSQL + Prisma" stack choice assumed, and avoids
+// betting the schema/migration workflow on a brand-new API surface that
+// can't be live-tested against a real Postgres in this sandbox (see
+// docs/architecture/server.md §0).
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  hostedLobbies Lobby[]        @relation("LobbyHost")
+  lobbySeats    LobbySeat[]
+  stats         PlayerStats?
+}
+
+/// Opaque random tokens, stored only as a hash — rotation chain for reuse detection (see docs/architecture/server.md §2).
+model RefreshToken {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @unique
+
+  replaces   RefreshToken? @relation("TokenChain", fields: [replacedById], references: [id])
+  replacedBy RefreshToken? @relation("TokenChain")
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum LobbyStatus {
+  WAITING
+  STARTED
+  CLOSED
+}
+
+model Lobby {
+  id                  String      @id @default(uuid())
+  code                String?     @unique
+  isPublic            Boolean     @default(true)
+  hostUserId          String
+  host                User        @relation("LobbyHost", fields: [hostUserId], references: [id])
+  status              LobbyStatus @default(WAITING)
+  targetVictoryPoints Int         @default(10)
+  enabledModuleIds    String[]
+  turnTimerSeconds    Int         @default(120)
+  createdAt           DateTime    @default(now())
+
+  seats LobbySeat[]
+  game  Game?
+}
+
+enum BotDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model LobbySeat {
+  id            String         @id @default(uuid())
+  lobbyId       String
+  lobby         Lobby          @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  seatIndex     Int
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id])
+  botDifficulty BotDifficulty?
+  isReady       Boolean        @default(false)
+
+  @@unique([lobbyId, seatIndex])
+}
+
+enum GameStatus {
+  ACTIVE
+  ENDED
+  ABANDONED
+}
+
+model Game {
+  id         String     @id @default(uuid())
+  lobbyId    String     @unique
+  lobby      Lobby      @relation(fields: [lobbyId], references: [id])
+  seed       String
+  configJson Json
+  status     GameStatus @default(ACTIVE)
+  winnerId   String?
+  startedAt  DateTime   @default(now())
+  endedAt    DateTime?
+
+  actions GameAction[]
+}
+
+/// The event-sourced action log — the only durable source of truth for game
+/// state. GameState itself is never persisted; it's cached (Redis) or
+/// rebuilt by replaying this table through the engine.
+model GameAction {
+  id         String   @id @default(uuid())
+  gameId     String
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  seq        Int
+  playerId   String
+  actionJson Json
+  createdAt  DateTime @default(now())
+
+  @@unique([gameId, seq])
+}
+
+model PlayerStats {
+  userId      String   @id
+  user        User     @relation(fields: [userId], references: [id])
+  gamesPlayed Int      @default(0)
+  gamesWon    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
