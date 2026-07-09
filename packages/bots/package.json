@@ -16,7 +16,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bench": "node dist/benchmark/cli.js"
   },
   "dependencies": {
     "@hexhaven/engine": "workspace:*"

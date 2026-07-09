@@ -1,6 +1,11 @@
-import { BASE_BOARD_SPEC, generateBoard } from "@hexhaven/engine";
-
-/** Placeholder — Phase 7 replaces this with the actual bot tiers. */
-export function botsPlaceholder(): number {
-  return generateBoard(BASE_BOARD_SPEC, { seed: "bots-scaffold" }).tiles.length;
-}
+export * from "./types.js";
+export * from "./boardGeometry.js";
+export * from "./legalActions.js";
+export * from "./evaluate.js";
+export * from "./ruleBasedBot.js";
+export * from "./heuristicBot.js";
+export * from "./mctsBot.js";
+export * from "./turnHelpers.js";
+export * from "./benchmark/botSpec.js";
+export * from "./benchmark/gameRunner.js";
+export * from "./benchmark/runTournament.js";
