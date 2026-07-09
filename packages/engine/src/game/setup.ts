@@ -55,6 +55,7 @@ export function createGame(modules: readonly RuleModule[], options: CreateGameOp
     devCards: [],
     knightsPlayed: 0,
     devCardPlayedThisTurn: false,
+    shipMovedThisTurn: false,
   }));
 
   const order = [...playerIds, ...[...playerIds].reverse()];
@@ -70,7 +71,7 @@ export function createGame(modules: readonly RuleModule[], options: CreateGameOp
     lastSettlementVertex: null,
   };
 
-  return {
+  let state: GameState = {
     board,
     players,
     bank: { ...config.startingBank },
@@ -88,7 +89,19 @@ export function createGame(modules: readonly RuleModule[], options: CreateGameOp
     longestRoadPlayerId: null,
     largestArmyPlayerId: null,
     targetVictoryPoints,
+    ships: new Map(),
+    pirateHex: null,
+    hiddenHexes: new Map(),
+    discoveryBag: [],
+    islandBonusAwarded: new Map(),
+    homeIslandHexes: [],
   };
+
+  for (const module of modules) {
+    state = module.initGameState?.(state) ?? state;
+  }
+
+  return state;
 }
 
 export function validatePlaceSettlement(

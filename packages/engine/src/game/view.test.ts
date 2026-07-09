@@ -10,10 +10,11 @@ describe("viewFor", () => {
         {
           id: "p1",
           hand: { wood: 3, wheat: 1, sheep: 0, brick: 2, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [{ type: "knight", boughtTurn: 0 }],
           knightsPlayed: 1,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         testGameState().players[1]!,
       ],
@@ -33,10 +34,11 @@ describe("viewFor", () => {
         {
           id: "p2",
           hand: { wood: 3, wheat: 1, sheep: 0, brick: 2, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [{ type: "monopoly", boughtTurn: 0 }],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -72,10 +74,11 @@ describe("viewFor", () => {
         {
           id: "p1",
           hand: { wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [{ type: "victory_point", boughtTurn: 0 }],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         testGameState().players[1]!,
       ],

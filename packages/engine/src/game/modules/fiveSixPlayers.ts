@@ -82,6 +82,9 @@ export const FIVE_SIX_PLAYERS_MODULE: RuleModule = {
     BUILD_SETTLEMENT: (state, action) => isMySpecialBuildTurn(state, action.playerId),
     BUILD_CITY: (state, action) => isMySpecialBuildTurn(state, action.playerId),
     BUY_DEV_CARD: (state, action) => isMySpecialBuildTurn(state, action.playerId),
+    // Composed with seafarers-style: ships are a building action too, so
+    // they get the same special-build allowance as the other 4.
+    BUILD_SHIP: (state, action) => isMySpecialBuildTurn(state, action.playerId),
   },
 
   afterEndTurn: (state, endedPlayerId) => {

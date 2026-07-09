@@ -37,11 +37,14 @@ import type { RuleModule } from "../module.js";
 import type { Action, ApplySuccess, GameEvent, GameState } from "../types.js";
 
 /**
- * Base's own gate for the 4 action types five-six-players extends
+ * Base's own gate for the "build-ish" action types other modules extend
  * (main phase + current player), OR'd with any active module's
  * `extraActionGates` for that type — see docs/architecture/modules.md §4.
+ * Exported so other modules that fully own a new build-ish action type
+ * (seafarers' BUILD_SHIP/MOVE_SHIP) can reuse the exact same gate instead
+ * of reimplementing it.
  */
-function requireBuildGate(
+export function requireBuildGate(
   modules: readonly RuleModule[],
   state: GameState,
   action: Action,
@@ -64,8 +67,12 @@ function requireBuildGate(
  * Largest Army, then check victory for `actingPlayerId` only — "win only on
  * your own turn" means we never check it for a third party who merely
  * benefited from the acting player's move (e.g. a Longest Road transfer).
+ * Exported so a module that fully owns a new building-ish action (or
+ * wraps an existing one) can run the same post-processing after its own
+ * effects, in the right order — see seafarers' BUILD_SETTLEMENT override,
+ * which must apply its island-bonus VP *before* this checks victory.
  */
-function applyAwardsAndVictory(
+export function applyAwardsAndVictory(
   modules: readonly RuleModule[],
   result: ApplySuccess,
   actingPlayerId: PlayerId,

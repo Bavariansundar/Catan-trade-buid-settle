@@ -31,13 +31,14 @@ describe("computeVictoryPoints", () => {
         {
           id: "p1",
           hand: { wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [
             { type: "victory_point", boughtTurn: 0 },
             { type: "victory_point", boughtTurn: 0 },
           ],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         testGameState().players[1]!,
       ],
@@ -76,10 +77,11 @@ describe("victory via applyAction — win only on your own turn", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 1, sheep: 1, ore: 0 },
-          pieces: { settlements: 4, cities: 4, roads: 15 },
+          pieces: { settlements: 4, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         testGameState().players[1]!,
       ],
@@ -105,10 +107,11 @@ describe("victory via applyAction — win only on your own turn", () => {
         {
           id: "p1",
           hand: { ore: 1, wheat: 1, sheep: 1, wood: 0, brick: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         testGameState().players[1]!,
       ],
@@ -134,15 +137,16 @@ describe("victory via applyAction — win only on your own turn", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 4, cities: 4, roads: 14 },
+          pieces: { settlements: 4, cities: 4, roads: 14, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [
             { type: "victory_point", boughtTurn: 0 },
             { type: "victory_point", boughtTurn: 0 },
@@ -150,6 +154,7 @@ describe("victory via applyAction — win only on your own turn", () => {
           ],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });

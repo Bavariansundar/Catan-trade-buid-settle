@@ -114,6 +114,60 @@ describe("computeLongestRoad", () => {
   });
 });
 
+describe("computeLongestRoad — combined roads + ships (seafarers-style)", () => {
+  it("a pure ship chain counts exactly like a road chain (ship-ship needs no settlement)", () => {
+    const start = vertexAt(TEST_HEX.center, 0);
+    const { edges } = chain(start, 4);
+    const state = testGameState({ ships: roadsFor("p1", edges) });
+    expect(computeLongestRoad(state, "p1")).toBe(4);
+  });
+
+  it("combines a road chain and a ship chain that meet at the player's own settlement", () => {
+    const start = vertexAt(TEST_HEX.center, 0);
+    const roadPart = chain(start, 3);
+    const junction = roadPart.vertices.at(-1)!;
+    const shared = new Set(roadPart.vertices.map((v) => v.id));
+    const shipPart = chain(junction, 3, shared);
+
+    const state = testGameState({
+      roads: roadsFor("p1", roadPart.edges),
+      ships: roadsFor("p1", shipPart.edges),
+      buildings: new Map([[junction.id, { playerId: "p1", type: "settlement" as const }]]),
+    });
+    expect(computeLongestRoad(state, "p1")).toBe(6);
+  });
+
+  it("does NOT let the route switch from road to ship through an empty vertex", () => {
+    const start = vertexAt(TEST_HEX.center, 0);
+    const roadPart = chain(start, 3);
+    const junction = roadPart.vertices.at(-1)!;
+    const shared = new Set(roadPart.vertices.map((v) => v.id));
+    const shipPart = chain(junction, 3, shared);
+
+    const state = testGameState({
+      roads: roadsFor("p1", roadPart.edges),
+      ships: roadsFor("p1", shipPart.edges),
+      // No settlement at `junction` — the road and ship chains stay separate.
+    });
+    expect(computeLongestRoad(state, "p1")).toBe(3);
+  });
+
+  it("does NOT let the route switch through an opponent's settlement even if it would otherwise bridge kinds", () => {
+    const start = vertexAt(TEST_HEX.center, 0);
+    const roadPart = chain(start, 3);
+    const junction = roadPart.vertices.at(-1)!;
+    const shared = new Set(roadPart.vertices.map((v) => v.id));
+    const shipPart = chain(junction, 3, shared);
+
+    const state = testGameState({
+      roads: roadsFor("p1", roadPart.edges),
+      ships: roadsFor("p1", shipPart.edges),
+      buildings: new Map([[junction.id, { playerId: "p2", type: "settlement" as const }]]),
+    });
+    expect(computeLongestRoad(state, "p1")).toBe(3);
+  });
+});
+
 // Widely separated anchors (100 hexes apart) so different players' chains
 // — each walked independently with no knowledge of the others — can never
 // physically cross paths and accidentally claim the same edge.

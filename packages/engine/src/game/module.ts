@@ -66,6 +66,15 @@ export interface RuleModule {
   ) => { state: GameState; events?: readonly GameEvent[] };
 
   readonly extraVictoryPoints?: (state: GameState, playerId: PlayerId) => number;
+
+  /**
+   * Runs once, right after `createGame`'s core state is built, in module
+   * order — lets a module inject its own initial state (e.g. seafarers
+   * setting `pirateHex`/`hiddenHexes`/`discoveryBag` from its scenario).
+   * Base and five-six-players don't need this; seafarers is the first
+   * module that does.
+   */
+  readonly initGameState?: (state: GameState) => GameState;
 }
 
 /** Folds every active module's `configExtension` over {@link BASE_CONFIG}, in order. */

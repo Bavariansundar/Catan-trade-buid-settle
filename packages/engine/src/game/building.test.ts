@@ -23,18 +23,20 @@ describe("BUILD_ROAD", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 4, cities: 4, roads: 15 },
+          pieces: { settlements: 4, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -57,18 +59,20 @@ describe("BUILD_ROAD", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -86,18 +90,20 @@ describe("BUILD_ROAD", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -129,18 +135,20 @@ describe("BUILD_ROAD", () => {
         {
           id: "p1",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -157,18 +165,20 @@ describe("BUILD_ROAD", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 0 },
+          pieces: { settlements: 5, cities: 4, roads: 0, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -217,18 +227,20 @@ describe("BUILD_SETTLEMENT", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 1, sheep: 1, ore: 0 },
-          pieces: { settlements: 4, cities: 4, roads: 13 },
+          pieces: { settlements: 4, cities: 4, roads: 13, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -255,18 +267,20 @@ describe("BUILD_SETTLEMENT", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 1, sheep: 1, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -286,18 +300,20 @@ describe("BUILD_SETTLEMENT", () => {
         {
           id: "p1",
           hand: { wood: 1, brick: 1, wheat: 1, sheep: 1, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -332,18 +348,20 @@ describe("BUILD_CITY", () => {
         {
           id: "p1",
           hand: { ore: 3, wheat: 2, wood: 0, sheep: 0, brick: 0 },
-          pieces: { settlements: 4, cities: 4, roads: 15 },
+          pieces: { settlements: 4, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -356,7 +374,7 @@ describe("BUILD_CITY", () => {
     if (isRuleError(result)) return;
     expect(result.state.buildings.get(V0.id)).toEqual({ playerId: "p1", type: "city" });
     const p1 = result.state.players.find((p) => p.id === "p1")!;
-    expect(p1.pieces).toEqual({ settlements: 5, cities: 3, roads: 15 });
+    expect(p1.pieces).toEqual({ settlements: 5, cities: 3, roads: 15, ships: 0 });
     expect(p1.hand).toEqual({ ore: 0, wheat: 0, wood: 0, sheep: 0, brick: 0 });
   });
 
@@ -378,18 +396,20 @@ describe("BUILD_CITY", () => {
         {
           id: "p1",
           hand: { ore: 3, wheat: 2, wood: 0, sheep: 0, brick: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -409,18 +429,20 @@ describe("BUILD_CITY", () => {
         {
           id: "p1",
           hand: { ore: 3, wheat: 2, wood: 0, sheep: 0, brick: 0 },
-          pieces: { settlements: 5, cities: 3, roads: 15 },
+          pieces: { settlements: 5, cities: 3, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });
@@ -440,18 +462,20 @@ describe("BUILD_CITY", () => {
         {
           id: "p1",
           hand: { ore: 1, wheat: 0, wood: 0, sheep: 0, brick: 0 },
-          pieces: { settlements: 4, cities: 4, roads: 15 },
+          pieces: { settlements: 4, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
         {
           id: "p2",
           hand: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
-          pieces: { settlements: 5, cities: 4, roads: 15 },
+          pieces: { settlements: 5, cities: 4, roads: 15, ships: 0 },
           devCards: [],
           knightsPlayed: 0,
           devCardPlayedThisTurn: false,
+          shipMovedThisTurn: false,
         },
       ],
     });

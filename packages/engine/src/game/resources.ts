@@ -32,12 +32,16 @@ export const BUILD_COSTS = {
   settlement: { wood: 1, brick: 1, wheat: 1, sheep: 1 },
   city: { ore: 3, wheat: 2 },
   devCard: { ore: 1, wheat: 1, sheep: 1 },
+  /** Seafarers-style only. */
+  ship: { wood: 1, sheep: 1 },
 } as const satisfies Record<string, Partial<ResourceHand>>;
 
 export const PIECE_LIMITS = {
   settlements: 5,
   cities: 4,
   roads: 15,
+  /** Seafarers-style only; base/five-six-players never spend it. */
+  ships: 0,
 } as const;
 
 export const STARTING_BANK: ResourceHand = {

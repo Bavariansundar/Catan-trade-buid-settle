@@ -52,6 +52,7 @@ export function testPlayer(id: PlayerId): Player {
     devCards: [],
     knightsPlayed: 0,
     devCardPlayedThisTurn: false,
+    shipMovedThisTurn: false,
   };
 }
 
@@ -76,6 +77,12 @@ export function testGameState(overrides: Partial<GameState> = {}): GameState {
     longestRoadPlayerId: null,
     largestArmyPlayerId: null,
     targetVictoryPoints: 10,
+    ships: new Map(),
+    pirateHex: null,
+    hiddenHexes: new Map(),
+    discoveryBag: [],
+    islandBonusAwarded: new Map(),
+    homeIslandHexes: [],
     ...overrides,
   };
 }

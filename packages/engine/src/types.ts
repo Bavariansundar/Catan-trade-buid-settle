@@ -21,6 +21,12 @@ export interface Harbor {
 export interface Board {
   readonly tiles: readonly HexTile[];
   readonly harbors: readonly Harbor[];
+  /**
+   * Seafarers-style only: sea hexes that are part of the scenario's play
+   * area (used for sea-edge/land-edge classification). Empty for base and
+   * five-six-players. See docs/rules/seafarers-style.md §2.
+   */
+  readonly seaHexes?: readonly Hex[];
 }
 
 export interface RuleError {
