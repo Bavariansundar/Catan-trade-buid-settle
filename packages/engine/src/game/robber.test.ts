@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { vertexAt } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { testGameState, TEST_HEX } from "./testFixtures.js";
@@ -29,7 +30,7 @@ describe("DISCARD", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "DISCARD",
       playerId: "p1",
       resources: { wood: 3, wheat: 1 },
@@ -71,7 +72,11 @@ describe("DISCARD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "DISCARD", playerId: "p1", resources: { wood: 4 } });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "DISCARD",
+      playerId: "p1",
+      resources: { wood: 4 },
+    });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.phase).toMatchObject({ name: "discard" });
@@ -83,7 +88,11 @@ describe("DISCARD", () => {
 
   it("rejects a discard from a player who owes nothing", () => {
     const state = testGameState({ phase: { name: "discard", pending: new Map([["p1", 4]]) } });
-    const result = applyAction(state, { type: "DISCARD", playerId: "p2", resources: {} });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "DISCARD",
+      playerId: "p2",
+      resources: {},
+    });
     expect(result).toMatchObject({ code: "NOT_PENDING" });
   });
 
@@ -109,7 +118,11 @@ describe("DISCARD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "DISCARD", playerId: "p1", resources: { wood: 1 } });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "DISCARD",
+      playerId: "p1",
+      resources: { wood: 1 },
+    });
     expect(result).toMatchObject({ code: "WRONG_DISCARD_COUNT" });
   });
 
@@ -135,7 +148,11 @@ describe("DISCARD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "DISCARD", playerId: "p1", resources: { wood: 4 } });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "DISCARD",
+      playerId: "p1",
+      resources: { wood: 4 },
+    });
     expect(result).toMatchObject({ code: "INSUFFICIENT_RESOURCES" });
   });
 });
@@ -165,7 +182,7 @@ describe("MOVE_ROBBER", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MOVE_ROBBER",
       playerId: "p1",
       hex: TEST_HEX.center,
@@ -185,7 +202,7 @@ describe("MOVE_ROBBER", () => {
 
   it("allows moving with no steal when nobody is adjacent", () => {
     const state = testGameState({ phase: { name: "robber" }, currentPlayerIndex: 0 });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MOVE_ROBBER",
       playerId: "p1",
       hex: TEST_HEX.w,
@@ -198,7 +215,7 @@ describe("MOVE_ROBBER", () => {
 
   it("rejects leaving the robber on the same hex", () => {
     const state = testGameState({ phase: { name: "robber" }, currentPlayerIndex: 0 });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MOVE_ROBBER",
       playerId: "p1",
       hex: state.robber,
@@ -209,7 +226,7 @@ describe("MOVE_ROBBER", () => {
 
   it("rejects moving the robber off the board", () => {
     const state = testGameState({ phase: { name: "robber" }, currentPlayerIndex: 0 });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MOVE_ROBBER",
       playerId: "p1",
       hex: { q: 99, r: 99 },
@@ -242,7 +259,7 @@ describe("MOVE_ROBBER", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MOVE_ROBBER",
       playerId: "p1",
       hex: TEST_HEX.center,
@@ -275,7 +292,7 @@ describe("MOVE_ROBBER", () => {
         }, // 0 cards
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MOVE_ROBBER",
       playerId: "p1",
       hex: TEST_HEX.center,

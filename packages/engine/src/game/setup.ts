@@ -1,57 +1,48 @@
 import { hexEquals, verticesOfEdge, type Edge, type Vertex } from "../coordinates.js";
-import { generateBoard } from "../board/generate.js";
 import type { PlayerId, RuleError } from "../types.js";
 import { isEdgeOnBoard, isVertexOnBoard, satisfiesDistanceRule } from "./building.js";
-import { DEV_CARD_DECK } from "./devCards.js";
-import {
-  addHands,
-  emptyHand,
-  handTotal,
-  PIECE_LIMITS,
-  STARTING_BANK,
-  subtractHands,
-} from "./resources.js";
+import { resolveBoardGenerator, resolveConfig, type RuleModule } from "./module.js";
+import { addHands, emptyHand, handTotal, subtractHands } from "./resources.js";
 import { createRng, normalizeSeed, shuffle } from "../rng.js";
 import type { ApplySuccess, GameEvent, GameState, Player, SetupPhase } from "./types.js";
-
-const DEFAULT_TARGET_VICTORY_POINTS = 10;
-const MIN_TARGET_VICTORY_POINTS = 10;
-const MAX_TARGET_VICTORY_POINTS = 14;
 
 export interface CreateGameOptions {
   readonly playerIds: readonly PlayerId[];
   readonly seed: number | string;
   /** Defaults to `seed` — override to vary the board independently of turn RNG. */
   readonly boardSeed?: number | string;
-  /** 10-14; defaults to 10. */
+  /** Must fall within the resolved config's targetVictoryPointsRange; defaults to its minimum. */
   readonly targetVictoryPoints?: number;
 }
 
 /**
- * Builds the initial game state: generates the board, seats players in the
- * given order, and starts the snake-draft setup phase. Throws on caller
- * errors (wrong player count, duplicate ids) — this is a factory, not an
- * in-game action, so there's no RuleError channel for it.
+ * Builds the initial game state: resolves `modules`' combined config and
+ * board spec, generates the board, seats players in the given order, and
+ * starts the snake-draft setup phase. Throws on caller errors (wrong player
+ * count, duplicate ids) — this is a factory, not an in-game action, so
+ * there's no RuleError channel for it.
  */
-export function createGame(options: CreateGameOptions): GameState {
+export function createGame(modules: readonly RuleModule[], options: CreateGameOptions): GameState {
   const { playerIds, seed } = options;
-  if (playerIds.length < 2 || playerIds.length > 4) {
-    throw new Error(`createGame requires 2-4 players, got ${String(playerIds.length)}`);
+  const config = resolveConfig(modules);
+  const [minPlayers, maxPlayers] = config.playerCountRange;
+  if (playerIds.length < minPlayers || playerIds.length > maxPlayers) {
+    throw new Error(
+      `createGame requires ${String(minPlayers)}-${String(maxPlayers)} players, got ${String(playerIds.length)}`,
+    );
   }
   if (new Set(playerIds).size !== playerIds.length) {
     throw new Error("createGame requires unique player ids");
   }
-  const targetVictoryPoints = options.targetVictoryPoints ?? DEFAULT_TARGET_VICTORY_POINTS;
-  if (
-    targetVictoryPoints < MIN_TARGET_VICTORY_POINTS ||
-    targetVictoryPoints > MAX_TARGET_VICTORY_POINTS
-  ) {
+  const [minTargetVp, maxTargetVp] = config.targetVictoryPointsRange;
+  const targetVictoryPoints = options.targetVictoryPoints ?? minTargetVp;
+  if (targetVictoryPoints < minTargetVp || targetVictoryPoints > maxTargetVp) {
     throw new Error(
-      `targetVictoryPoints must be between ${String(MIN_TARGET_VICTORY_POINTS)} and ${String(MAX_TARGET_VICTORY_POINTS)}, got ${String(targetVictoryPoints)}`,
+      `targetVictoryPoints must be between ${String(minTargetVp)} and ${String(maxTargetVp)}, got ${String(targetVictoryPoints)}`,
     );
   }
 
-  const board = generateBoard({ seed: options.boardSeed ?? seed });
+  const board = resolveBoardGenerator(modules)({ seed: options.boardSeed ?? seed });
   const desertTile = board.tiles.find((t) => t.terrain === "desert");
   if (!desertTile) {
     throw new Error("Generated board has no desert tile");
@@ -60,7 +51,7 @@ export function createGame(options: CreateGameOptions): GameState {
   const players: Player[] = playerIds.map((id) => ({
     id,
     hand: emptyHand(),
-    pieces: { ...PIECE_LIMITS },
+    pieces: { ...config.pieceLimits },
     devCards: [],
     knightsPlayed: 0,
     devCardPlayedThisTurn: false,
@@ -69,7 +60,7 @@ export function createGame(options: CreateGameOptions): GameState {
   const order = [...playerIds, ...[...playerIds].reverse()];
   const gameRngSeed = typeof seed === "string" ? `${seed}:turns` : seed + 1;
   const devDeckRngSeed = typeof seed === "string" ? `${seed}:devdeck` : seed + 2;
-  const devDeck = shuffle(DEV_CARD_DECK, createRng(devDeckRngSeed));
+  const devDeck = shuffle(config.devCardDeck, createRng(devDeckRngSeed));
 
   const phase: SetupPhase = {
     name: "setup",
@@ -82,7 +73,7 @@ export function createGame(options: CreateGameOptions): GameState {
   return {
     board,
     players,
-    bank: { ...STARTING_BANK },
+    bank: { ...config.startingBank },
     buildings: new Map(),
     roads: new Map(),
     robber: desertTile.hex,

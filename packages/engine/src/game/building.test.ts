@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { edgeAt, edgesOfHex, edgesOfVertex, vertexAt, verticesOfEdge } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { testGameState, TEST_HEX } from "./testFixtures.js";
@@ -37,7 +38,7 @@ describe("BUILD_ROAD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge });
+    const result = applyAction([BASE_MODULE], state, { type: "BUILD_ROAD", playerId: "p1", edge });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.roads.get(edge.id)).toBe("p1");
@@ -71,7 +72,7 @@ describe("BUILD_ROAD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge });
+    const result = applyAction([BASE_MODULE], state, { type: "BUILD_ROAD", playerId: "p1", edge });
     expect(result).toMatchObject({ code: "EDGE_OCCUPIED" });
   });
 
@@ -100,7 +101,7 @@ describe("BUILD_ROAD", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "BUILD_ROAD",
       playerId: "p1",
       edge: disconnectedEdge,
@@ -115,7 +116,7 @@ describe("BUILD_ROAD", () => {
       buildings: new Map([[V0.id, { playerId: "p1", type: "settlement" }]]),
     });
     // give connectivity via the settlement but the edge itself is off-board
-    const result = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge });
+    const result = applyAction([BASE_MODULE], state, { type: "BUILD_ROAD", playerId: "p1", edge });
     expect(result).toMatchObject({ code: "OUT_OF_BOUNDS" });
   });
 
@@ -143,7 +144,7 @@ describe("BUILD_ROAD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge });
+    const result = applyAction([BASE_MODULE], state, { type: "BUILD_ROAD", playerId: "p1", edge });
     expect(result).toMatchObject({ code: "CANNOT_AFFORD" });
   });
 
@@ -171,17 +172,21 @@ describe("BUILD_ROAD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge });
+    const result = applyAction([BASE_MODULE], state, { type: "BUILD_ROAD", playerId: "p1", edge });
     expect(result).toMatchObject({ code: "NO_PIECES_LEFT" });
   });
 
   it("rejects building outside the main phase / out of turn", () => {
     const edge = edgesOfVertex(V0)[0];
     const state = testGameState({ phase: { name: "roll" } });
-    const wrongPhase = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge });
+    const wrongPhase = applyAction([BASE_MODULE], state, {
+      type: "BUILD_ROAD",
+      playerId: "p1",
+      edge,
+    });
     expect(wrongPhase).toMatchObject({ code: "WRONG_PHASE" });
 
-    const wrongTurn = applyAction(testGameState({ currentPlayerIndex: 1 }), {
+    const wrongTurn = applyAction([BASE_MODULE], testGameState({ currentPlayerIndex: 1 }), {
       type: "BUILD_ROAD",
       playerId: "p1",
       edge,
@@ -227,7 +232,11 @@ describe("BUILD_SETTLEMENT", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_SETTLEMENT", playerId: "p1", vertex: v2 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_SETTLEMENT",
+      playerId: "p1",
+      vertex: v2,
+    });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.buildings.get(v2.id)).toEqual({ playerId: "p1", type: "settlement" });
@@ -261,7 +270,11 @@ describe("BUILD_SETTLEMENT", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_SETTLEMENT", playerId: "p1", vertex: v1 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_SETTLEMENT",
+      playerId: "p1",
+      vertex: v1,
+    });
     expect(result).toMatchObject({ code: "DISTANCE_RULE" });
   });
 
@@ -288,7 +301,11 @@ describe("BUILD_SETTLEMENT", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_SETTLEMENT", playerId: "p1", vertex: v2 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_SETTLEMENT",
+      playerId: "p1",
+      vertex: v2,
+    });
     expect(result).toMatchObject({ code: "NOT_CONNECTED" });
   });
 
@@ -297,7 +314,11 @@ describe("BUILD_SETTLEMENT", () => {
       phase: { name: "main" },
       buildings: new Map([[V0.id, { playerId: "p2", type: "settlement" }]]),
     });
-    const result = applyAction(state, { type: "BUILD_SETTLEMENT", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_SETTLEMENT",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(result).toMatchObject({ code: "VERTEX_OCCUPIED" });
   });
 });
@@ -326,7 +347,11 @@ describe("BUILD_CITY", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_CITY", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_CITY",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.buildings.get(V0.id)).toEqual({ playerId: "p1", type: "city" });
@@ -337,7 +362,11 @@ describe("BUILD_CITY", () => {
 
   it("rejects upgrading a vertex with no settlement", () => {
     const state = testGameState({ phase: { name: "main" } });
-    const result = applyAction(state, { type: "BUILD_CITY", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_CITY",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(result).toMatchObject({ code: "NO_SETTLEMENT_TO_UPGRADE" });
   });
 
@@ -364,7 +393,11 @@ describe("BUILD_CITY", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_CITY", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_CITY",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(result).toMatchObject({ code: "NO_SETTLEMENT_TO_UPGRADE" });
   });
 
@@ -391,7 +424,11 @@ describe("BUILD_CITY", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_CITY", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_CITY",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(result).toMatchObject({ code: "NO_SETTLEMENT_TO_UPGRADE" });
   });
 
@@ -418,7 +455,11 @@ describe("BUILD_CITY", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUILD_CITY", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_CITY",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(result).toMatchObject({ code: "CANNOT_AFFORD" });
   });
 });

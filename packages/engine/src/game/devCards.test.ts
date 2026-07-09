@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { edgesOfVertex, vertexAt } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { testGameState, TEST_HEX } from "./testFixtures.js";
@@ -30,7 +31,7 @@ describe("BUY_DEV_CARD", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "BUY_DEV_CARD", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "BUY_DEV_CARD", playerId: "p1" });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     const p1 = result.state.players.find((p) => p.id === "p1")!;
@@ -41,13 +42,13 @@ describe("BUY_DEV_CARD", () => {
 
   it("rejects buying when the deck is empty", () => {
     const state = testGameState({ devDeck: [] });
-    const result = applyAction(state, { type: "BUY_DEV_CARD", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "BUY_DEV_CARD", playerId: "p1" });
     expect(result).toMatchObject({ code: "DECK_EMPTY" });
   });
 
   it("rejects buying without enough resources", () => {
     const state = testGameState({ devDeck: ["knight"] });
-    const result = applyAction(state, { type: "BUY_DEV_CARD", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "BUY_DEV_CARD", playerId: "p1" });
     expect(result).toMatchObject({ code: "CANNOT_AFFORD" });
   });
 });
@@ -69,7 +70,7 @@ describe("PLAY_DEV_CARD — general gating", () => {
       turnNumber: 5,
       players: [playerWithCard(5), testGameState().players[1]!],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "knight",
       playerId: "p1",
@@ -82,7 +83,7 @@ describe("PLAY_DEV_CARD — general gating", () => {
   it("rejects a second dev card play in the same turn", () => {
     const player = { ...playerWithCard(0), devCardPlayedThisTurn: true };
     const state = testGameState({ turnNumber: 5, players: [player, testGameState().players[1]!] });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "knight",
       playerId: "p1",
@@ -97,7 +98,7 @@ describe("PLAY_DEV_CARD — general gating", () => {
       turnNumber: 5,
       players: [playerWithCard(0), testGameState().players[1]!],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "monopoly",
       playerId: "p1",
@@ -131,7 +132,7 @@ describe("PLAY_DEV_CARD — knight", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "knight",
       playerId: "p1",
@@ -176,7 +177,7 @@ describe("PLAY_DEV_CARD — monopoly", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "monopoly",
       playerId: "p1",
@@ -218,7 +219,7 @@ describe("PLAY_DEV_CARD — road building", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "road_building",
       playerId: "p1",
@@ -257,7 +258,7 @@ describe("PLAY_DEV_CARD — road building", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "road_building",
       playerId: "p1",
@@ -290,7 +291,7 @@ describe("PLAY_DEV_CARD — year of plenty", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "year_of_plenty",
       playerId: "p1",
@@ -326,7 +327,7 @@ describe("PLAY_DEV_CARD — year of plenty", () => {
         },
       ],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "PLAY_DEV_CARD",
       card: "year_of_plenty",
       playerId: "p1",

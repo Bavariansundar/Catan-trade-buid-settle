@@ -69,7 +69,20 @@ export interface EndedPhase {
   readonly winner: PlayerId;
 }
 
-export type Phase = SetupPhase | RollPhase | DiscardPhase | RobberPhase | MainPhase | EndedPhase;
+/**
+ * five-six-players-only: after a turn ends, every other player (starting
+ * from whoever rolls next) gets a chance to build/buy before the next
+ * roll — see docs/architecture/modules.md §4.
+ */
+export interface SpecialBuildPhase {
+  readonly name: "specialBuild";
+  /** Remaining players still owed a turn, in seating order; `queue[0]` is up next. */
+  readonly queue: readonly PlayerId[];
+  readonly endedPlayerId: PlayerId;
+}
+
+export type Phase =
+  SetupPhase | RollPhase | DiscardPhase | RobberPhase | MainPhase | EndedPhase | SpecialBuildPhase;
 
 export interface TradeOffer {
   readonly id: string;
@@ -161,6 +174,12 @@ export interface EndTurnAction {
   readonly playerId: PlayerId;
 }
 
+/** five-six-players-only: declines further building, advancing the special build queue. */
+export interface PassSpecialBuildAction {
+  readonly type: "PASS_SPECIAL_BUILD";
+  readonly playerId: PlayerId;
+}
+
 export interface ProposeTradeAction {
   readonly type: "PROPOSE_TRADE";
   readonly playerId: PlayerId;
@@ -249,6 +268,7 @@ export type Action =
   | BuildSettlementAction
   | BuildCityAction
   | EndTurnAction
+  | PassSpecialBuildAction
   | ProposeTradeAction
   | AcceptTradeAction
   | RejectTradeAction
@@ -344,6 +364,20 @@ export interface TurnStartedEvent {
 export interface TurnEndedEvent {
   readonly type: "TURN_ENDED";
   readonly playerId: PlayerId;
+}
+
+export interface SpecialBuildStartedEvent {
+  readonly type: "SPECIAL_BUILD_STARTED";
+  readonly queue: readonly PlayerId[];
+}
+
+export interface SpecialBuildPassedEvent {
+  readonly type: "SPECIAL_BUILD_PASSED";
+  readonly playerId: PlayerId;
+}
+
+export interface SpecialBuildEndedEvent {
+  readonly type: "SPECIAL_BUILD_ENDED";
 }
 
 export interface TradeProposedEvent {
@@ -456,6 +490,9 @@ export type GameEvent =
   | ResourceStolenEvent
   | TurnStartedEvent
   | TurnEndedEvent
+  | SpecialBuildStartedEvent
+  | SpecialBuildPassedEvent
+  | SpecialBuildEndedEvent
   | TradeProposedEvent
   | TradeAcceptedEvent
   | TradeRejectedEvent

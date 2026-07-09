@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import { edgesOfVertex, verticesOfHex, type Edge, type Vertex } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { isEdgeOnBoard, satisfiesDistanceRule } from "./building.js";
+import { BASE_MODULE } from "./modules/base.js";
 import { handTotal } from "./resources.js";
 import { createGame } from "./setup.js";
-import { isRuleError, type ApplySuccess, type GameState } from "./types.js";
+import { isRuleError, type Action, type ApplySuccess, type GameState } from "./types.js";
 
-function apply(state: GameState, action: Parameters<typeof applyAction>[1]): ApplySuccess {
-  const result = applyAction(state, action);
+function apply(state: GameState, action: Action): ApplySuccess {
+  const result = applyAction([BASE_MODULE], state, action);
   if (isRuleError(result)) {
     throw new Error(
       `Action ${action.type} by ${action.playerId} was rejected: ${result.code} — ${result.message}`,
@@ -40,7 +41,10 @@ function findLegalSetupRoad(state: GameState, vertex: Vertex): Edge {
 
 describe("full game integration — setup through several rounds (4 players)", () => {
   it("plays a complete scripted game, asserting invariants after every action", () => {
-    let state = createGame({ playerIds: ["a", "b", "c", "d"], seed: "integration-test" });
+    let state = createGame([BASE_MODULE], {
+      playerIds: ["a", "b", "c", "d"],
+      seed: "integration-test",
+    });
 
     // --- Setup phase: 8 steps (settlement + road each), snake draft order ---
     expect(state.phase.name).toBe("setup");

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { edgesOfVertex, vertexAt } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { computePublicVictoryPoints, computeVictoryPoints, hasWon } from "./victory.js";
@@ -16,12 +17,12 @@ describe("computeVictoryPoints", () => {
         [V1.id, { playerId: "p1", type: "city" as const }],
       ]),
     });
-    expect(computeVictoryPoints(state, "p1")).toBe(3);
+    expect(computeVictoryPoints([BASE_MODULE], state, "p1")).toBe(3);
   });
 
   it("adds 2 for Longest Road and 2 for Largest Army when held", () => {
     const state = testGameState({ longestRoadPlayerId: "p1", largestArmyPlayerId: "p1" });
-    expect(computeVictoryPoints(state, "p1")).toBe(4);
+    expect(computeVictoryPoints([BASE_MODULE], state, "p1")).toBe(4);
   });
 
   it("adds 1 per hidden VP dev card, but computePublicVictoryPoints excludes them", () => {
@@ -41,8 +42,8 @@ describe("computeVictoryPoints", () => {
         testGameState().players[1]!,
       ],
     });
-    expect(computeVictoryPoints(state, "p1")).toBe(2);
-    expect(computePublicVictoryPoints(state, "p1")).toBe(0);
+    expect(computeVictoryPoints([BASE_MODULE], state, "p1")).toBe(2);
+    expect(computePublicVictoryPoints([BASE_MODULE], state, "p1")).toBe(0);
   });
 });
 
@@ -52,7 +53,7 @@ describe("hasWon", () => {
       targetVictoryPoints: 2,
       buildings: new Map([[V0.id, { playerId: "p1", type: "city" as const }]]),
     });
-    expect(hasWon(state, "p1")).toBe(true);
+    expect(hasWon([BASE_MODULE], state, "p1")).toBe(true);
   });
 
   it("is false below the target", () => {
@@ -60,7 +61,7 @@ describe("hasWon", () => {
       targetVictoryPoints: 10,
       buildings: new Map([[V0.id, { playerId: "p1", type: "settlement" as const }]]),
     });
-    expect(hasWon(state, "p1")).toBe(false);
+    expect(hasWon([BASE_MODULE], state, "p1")).toBe(false);
   });
 });
 
@@ -84,7 +85,11 @@ describe("victory via applyAction — win only on your own turn", () => {
       ],
       roads: new Map([[connectingEdge.id, "p1"]]),
     });
-    const result = applyAction(state, { type: "BUILD_SETTLEMENT", playerId: "p1", vertex: V0 });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_SETTLEMENT",
+      playerId: "p1",
+      vertex: V0,
+    });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.phase).toMatchObject({ name: "ended", winner: "p1" });
@@ -108,7 +113,7 @@ describe("victory via applyAction — win only on your own turn", () => {
         testGameState().players[1]!,
       ],
     });
-    const result = applyAction(state, { type: "BUY_DEV_CARD", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "BUY_DEV_CARD", playerId: "p1" });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.phase).toMatchObject({ name: "ended", winner: "p1" });
@@ -148,9 +153,13 @@ describe("victory via applyAction — win only on your own turn", () => {
         },
       ],
     });
-    expect(hasWon(state, "p2")).toBe(true);
+    expect(hasWon([BASE_MODULE], state, "p2")).toBe(true);
 
-    const result = applyAction(state, { type: "BUILD_ROAD", playerId: "p1", edge: secondEdge });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "BUILD_ROAD",
+      playerId: "p1",
+      edge: secondEdge,
+    });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.phase).toEqual({ name: "main" });

@@ -1,36 +1,6 @@
 import { hexKey, neighbors } from "../coordinates.js";
-import type { Board, HarborType, HexTile, RuleError, TerrainType } from "../types.js";
-
-const EXPECTED_TERRAIN_COUNTS: Record<TerrainType, number> = {
-  wood: 4,
-  wheat: 4,
-  sheep: 4,
-  brick: 3,
-  ore: 3,
-  desert: 1,
-};
-
-const EXPECTED_NUMBER_COUNTS: Record<number, number> = {
-  2: 1,
-  3: 2,
-  4: 2,
-  5: 2,
-  6: 2,
-  8: 2,
-  9: 2,
-  10: 2,
-  11: 2,
-  12: 1,
-};
-
-const EXPECTED_HARBOR_COUNTS: Record<HarborType, number> = {
-  generic: 4,
-  wood: 1,
-  wheat: 1,
-  sheep: 1,
-  brick: 1,
-  ore: 1,
-};
+import type { BoardSpec } from "./generate.js";
+import type { Board, HexTile, RuleError } from "../types.js";
 
 export const RED_NUMBERS: ReadonlySet<number> = new Set([6, 8]);
 
@@ -52,29 +22,54 @@ export function hasAdjacentRedNumbers(tiles: readonly HexTile[]): boolean {
   return false;
 }
 
+function tally<T extends string | number>(items: readonly T[]): Map<T, number> {
+  const counts = new Map<T, number>();
+  for (const item of items) counts.set(item, (counts.get(item) ?? 0) + 1);
+  return counts;
+}
+
+/** Every key present in either map, each mismatch between them reported once. */
+function diffCounts<T extends string | number>(
+  expected: Map<T, number>,
+  actual: Map<T, number>,
+  describe: (key: T, expectedCount: number, actualCount: number) => RuleError,
+): RuleError[] {
+  const keys = new Set([...expected.keys(), ...actual.keys()]);
+  const errors: RuleError[] = [];
+  for (const key of keys) {
+    const expectedCount = expected.get(key) ?? 0;
+    const actualCount = actual.get(key) ?? 0;
+    if (expectedCount !== actualCount) errors.push(describe(key, expectedCount, actualCount));
+  }
+  return errors;
+}
+
 /**
- * Validates a base-module board against CLAUDE.md's invariants. Pure: does
- * not throw, returns the list of violations (empty = valid).
+ * Validates a board generated from `spec` (see {@link BoardSpec}): tile/
+ * token/harbor counts match the spec's bags, desert is numberless, no two
+ * adjacent tiles carry a red number. Pure: does not throw, returns the list
+ * of violations (empty = valid). Works for any board shape/size — the base
+ * 19-hex board, the five-six-players extension, or any future module's
+ * spec — since it derives its expectations from `spec` rather than
+ * hardcoding them.
  */
-export function validateBoard(board: Board): RuleError[] {
+export function validateBoard(board: Board, spec: BoardSpec): RuleError[] {
   const errors: RuleError[] = [];
 
-  const terrainCounts: Partial<Record<TerrainType, number>> = {};
-  for (const tile of board.tiles) {
-    terrainCounts[tile.terrain] = (terrainCounts[tile.terrain] ?? 0) + 1;
-  }
-  for (const terrain of Object.keys(EXPECTED_TERRAIN_COUNTS) as TerrainType[]) {
-    const expected = EXPECTED_TERRAIN_COUNTS[terrain];
-    const actual = terrainCounts[terrain] ?? 0;
-    if (actual !== expected) {
-      errors.push({
+  const expectedTerrainCounts = tally(spec.terrainBag);
+  const actualTerrainCounts = tally(board.tiles.map((t) => t.terrain));
+  errors.push(
+    ...diffCounts(
+      expectedTerrainCounts,
+      actualTerrainCounts,
+      (terrain, expected, actual): RuleError => ({
         code: "TERRAIN_COUNT_MISMATCH",
         message: `Expected ${String(expected)} ${terrain} tile(s), found ${String(actual)}`,
-      });
-    }
-  }
+      }),
+    ),
+  );
 
-  const numberCounts: Partial<Record<number, number>> = {};
+  const numberCounts = new Map<number, number>();
   for (const tile of board.tiles) {
     if (tile.terrain === "desert") {
       if (tile.number !== null) {
@@ -99,19 +94,14 @@ export function validateBoard(board: Board): RuleError[] {
       });
       continue;
     }
-    numberCounts[tile.number] = (numberCounts[tile.number] ?? 0) + 1;
+    numberCounts.set(tile.number, (numberCounts.get(tile.number) ?? 0) + 1);
   }
-  for (const numberKey of Object.keys(EXPECTED_NUMBER_COUNTS)) {
-    const number = Number(numberKey);
-    const expected = EXPECTED_NUMBER_COUNTS[number];
-    const actual = numberCounts[number] ?? 0;
-    if (actual !== expected) {
-      errors.push({
-        code: "NUMBER_COUNT_MISMATCH",
-        message: `Expected ${String(expected)} tile(s) numbered ${String(number)}, found ${String(actual)}`,
-      });
-    }
-  }
+  errors.push(
+    ...diffCounts(tally(spec.numberBag), numberCounts, (number, expected, actual): RuleError => ({
+      code: "NUMBER_COUNT_MISMATCH",
+      message: `Expected ${String(expected)} tile(s) numbered ${String(number)}, found ${String(actual)}`,
+    })),
+  );
 
   if (hasAdjacentRedNumbers(board.tiles)) {
     errors.push({
@@ -120,20 +110,16 @@ export function validateBoard(board: Board): RuleError[] {
     });
   }
 
-  const harborCounts: Partial<Record<HarborType, number>> = {};
-  for (const harbor of board.harbors) {
-    harborCounts[harbor.type] = (harborCounts[harbor.type] ?? 0) + 1;
-  }
-  for (const type of Object.keys(EXPECTED_HARBOR_COUNTS) as HarborType[]) {
-    const expected = EXPECTED_HARBOR_COUNTS[type];
-    const actual = harborCounts[type] ?? 0;
-    if (actual !== expected) {
-      errors.push({
+  errors.push(
+    ...diffCounts(
+      tally(spec.harborTypes),
+      tally(board.harbors.map((h) => h.type)),
+      (type, expected, actual): RuleError => ({
         code: "HARBOR_COUNT_MISMATCH",
         message: `Expected ${String(expected)} ${type} harbor(s), found ${String(actual)}`,
-      });
-    }
-  }
+      }),
+    ),
+  );
 
   return errors;
 }

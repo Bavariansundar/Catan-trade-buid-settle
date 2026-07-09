@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { vertexAt } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { computeProduction, pendingDiscards, validateRollDice } from "./dice.js";
@@ -122,7 +123,7 @@ describe("ROLL_DICE via applyAction", () => {
       rngState: seed,
       buildings: new Map([[vertex.id, { playerId: "p1", type: "settlement" }]]),
     });
-    const result = applyAction(state, { type: "ROLL_DICE", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "ROLL_DICE", playerId: "p1" });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.diceRoll).not.toBeNull();
@@ -135,7 +136,7 @@ describe("ROLL_DICE via applyAction", () => {
   it("rolling a 7 with everyone at or under 7 cards goes straight to the robber phase", () => {
     const seed = findRngStateForDiceTotal(7);
     const state = testGameState({ phase: { name: "roll" }, currentPlayerIndex: 0, rngState: seed });
-    const result = applyAction(state, { type: "ROLL_DICE", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "ROLL_DICE", playerId: "p1" });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.phase).toEqual({ name: "robber" });
@@ -166,7 +167,7 @@ describe("ROLL_DICE via applyAction", () => {
         },
       ],
     });
-    const result = applyAction(state, { type: "ROLL_DICE", playerId: "p1" });
+    const result = applyAction([BASE_MODULE], state, { type: "ROLL_DICE", playerId: "p1" });
     expect(isRuleError(result)).toBe(false);
     if (isRuleError(result)) return;
     expect(result.state.phase).toMatchObject({ name: "discard" });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { verticesOfEdge } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { bestMaritimeRatio } from "./trading.js";
@@ -21,7 +22,7 @@ describe("PROPOSE_TRADE / ACCEPT_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 1 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -32,7 +33,11 @@ describe("PROPOSE_TRADE / ACCEPT_TRADE", () => {
     if (isRuleError(proposed)) return;
     const tradeId = [...proposed.state.tradeOffers.keys()][0]!;
 
-    const accepted = applyAction(proposed.state, { type: "ACCEPT_TRADE", playerId: "p2", tradeId });
+    const accepted = applyAction([BASE_MODULE], proposed.state, {
+      type: "ACCEPT_TRADE",
+      playerId: "p2",
+      tradeId,
+    });
     expect(isRuleError(accepted)).toBe(false);
     if (isRuleError(accepted)) return;
     const p1 = accepted.state.players.find((p) => p.id === "p1")!;
@@ -46,7 +51,7 @@ describe("PROPOSE_TRADE / ACCEPT_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 1 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -63,7 +68,7 @@ describe("PROPOSE_TRADE / ACCEPT_TRADE", () => {
         p.id === "p1" ? { ...p, hand: { ...p.hand, wood: 0 } } : p,
       ),
     };
-    const accepted = applyAction(drainedState, {
+    const accepted = applyAction([BASE_MODULE], drainedState, {
       type: "ACCEPT_TRADE",
       playerId: "p2",
       tradeId,
@@ -75,7 +80,7 @@ describe("PROPOSE_TRADE / ACCEPT_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 1 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -84,7 +89,7 @@ describe("PROPOSE_TRADE / ACCEPT_TRADE", () => {
     });
     if (isRuleError(proposed)) throw new Error("setup failed");
     const tradeId = [...proposed.state.tradeOffers.keys()][0]!;
-    const result = applyAction(proposed.state, {
+    const result = applyAction([BASE_MODULE], proposed.state, {
       type: "ACCEPT_TRADE",
       playerId: "p1",
       tradeId,
@@ -98,7 +103,7 @@ describe("REJECT_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 1 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -107,7 +112,11 @@ describe("REJECT_TRADE", () => {
     });
     if (isRuleError(proposed)) throw new Error("setup failed");
     const tradeId = [...proposed.state.tradeOffers.keys()][0]!;
-    const rejected = applyAction(proposed.state, { type: "REJECT_TRADE", playerId: "p2", tradeId });
+    const rejected = applyAction([BASE_MODULE], proposed.state, {
+      type: "REJECT_TRADE",
+      playerId: "p2",
+      tradeId,
+    });
     expect(isRuleError(rejected)).toBe(false);
     if (isRuleError(rejected)) return;
     expect(rejected.state.tradeOffers.size).toBe(0);
@@ -119,7 +128,7 @@ describe("COUNTER_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 2 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -129,7 +138,7 @@ describe("COUNTER_TRADE", () => {
     if (isRuleError(proposed)) throw new Error("setup failed");
     const originalId = [...proposed.state.tradeOffers.keys()][0]!;
 
-    const countered = applyAction(proposed.state, {
+    const countered = applyAction([BASE_MODULE], proposed.state, {
       type: "COUNTER_TRADE",
       playerId: "p2",
       tradeId: originalId,
@@ -151,7 +160,7 @@ describe("CANCEL_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 1 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -161,14 +170,14 @@ describe("CANCEL_TRADE", () => {
     if (isRuleError(proposed)) throw new Error("setup failed");
     const tradeId = [...proposed.state.tradeOffers.keys()][0]!;
 
-    const wrongCanceler = applyAction(proposed.state, {
+    const wrongCanceler = applyAction([BASE_MODULE], proposed.state, {
       type: "CANCEL_TRADE",
       playerId: "p2",
       tradeId,
     });
     expect(wrongCanceler).toMatchObject({ code: "NOT_YOUR_TRADE" });
 
-    const cancelled = applyAction(proposed.state, {
+    const cancelled = applyAction([BASE_MODULE], proposed.state, {
       type: "CANCEL_TRADE",
       playerId: "p1",
       tradeId,
@@ -184,7 +193,7 @@ describe("END_TURN clears open trade offers", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", { ore: 1 })],
     });
-    const proposed = applyAction(state, {
+    const proposed = applyAction([BASE_MODULE], state, {
       type: "PROPOSE_TRADE",
       playerId: "p1",
       offering: { wood: 2 },
@@ -194,7 +203,7 @@ describe("END_TURN clears open trade offers", () => {
     if (isRuleError(proposed)) throw new Error("setup failed");
     expect(proposed.state.tradeOffers.size).toBe(1);
 
-    const ended = applyAction(proposed.state, { type: "END_TURN", playerId: "p1" });
+    const ended = applyAction([BASE_MODULE], proposed.state, { type: "END_TURN", playerId: "p1" });
     expect(isRuleError(ended)).toBe(false);
     if (isRuleError(ended)) return;
     expect(ended.state.tradeOffers.size).toBe(0);
@@ -243,7 +252,7 @@ describe("MARITIME_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 4 }), playerWithHand("p2", {})],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MARITIME_TRADE",
       playerId: "p1",
       give: "wood",
@@ -261,7 +270,7 @@ describe("MARITIME_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 2 }), playerWithHand("p2", {})],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MARITIME_TRADE",
       playerId: "p1",
       give: "wood",
@@ -274,7 +283,7 @@ describe("MARITIME_TRADE", () => {
     const state = testGameState({
       players: [playerWithHand("p1", { wood: 4 }), playerWithHand("p2", {})],
     });
-    const result = applyAction(state, {
+    const result = applyAction([BASE_MODULE], state, {
       type: "MARITIME_TRADE",
       playerId: "p1",
       give: "wood",

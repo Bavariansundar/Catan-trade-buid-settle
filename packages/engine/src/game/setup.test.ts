@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { edgesOfVertex, neighborVertices, verticesOfHex } from "../coordinates.js";
 import { applyAction } from "./apply.js";
 import { createGame } from "./setup.js";
-import { isRuleError, type ApplySuccess, type GameState } from "./types.js";
+import { isRuleError, type Action, type ApplySuccess, type GameState } from "./types.js";
 
-function apply(state: GameState, action: Parameters<typeof applyAction>[1]): ApplySuccess {
-  const result = applyAction(state, action);
+function apply(state: GameState, action: Action): ApplySuccess {
+  const result = applyAction([BASE_MODULE], state, action);
   if (isRuleError(result)) {
     throw new Error(`Expected success, got RuleError ${result.code}: ${result.message}`);
   }
@@ -14,19 +15,21 @@ function apply(state: GameState, action: Parameters<typeof applyAction>[1]): App
 
 describe("createGame", () => {
   it("throws for fewer than 2 players", () => {
-    expect(() => createGame({ playerIds: ["a"], seed: 1 })).toThrow();
+    expect(() => createGame([BASE_MODULE], { playerIds: ["a"], seed: 1 })).toThrow();
   });
 
   it("throws for more than 4 players", () => {
-    expect(() => createGame({ playerIds: ["a", "b", "c", "d", "e"], seed: 1 })).toThrow();
+    expect(() =>
+      createGame([BASE_MODULE], { playerIds: ["a", "b", "c", "d", "e"], seed: 1 }),
+    ).toThrow();
   });
 
   it("throws for duplicate player ids", () => {
-    expect(() => createGame({ playerIds: ["a", "a"], seed: 1 })).toThrow();
+    expect(() => createGame([BASE_MODULE], { playerIds: ["a", "a"], seed: 1 })).toThrow();
   });
 
   it("starts in the setup phase with a snake-draft order", () => {
-    const state = createGame({ playerIds: ["a", "b", "c"], seed: 1 });
+    const state = createGame([BASE_MODULE], { playerIds: ["a", "b", "c"], seed: 1 });
     expect(state.phase).toEqual({
       name: "setup",
       order: ["a", "b", "c", "c", "b", "a"],
@@ -37,7 +40,7 @@ describe("createGame", () => {
   });
 
   it("gives every player full starting piece supply and an empty hand", () => {
-    const state = createGame({ playerIds: ["a", "b"], seed: 1 });
+    const state = createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: 1 });
     for (const player of state.players) {
       expect(player.hand).toEqual({ wood: 0, wheat: 0, sheep: 0, brick: 0, ore: 0 });
       expect(player.pieces).toEqual({ settlements: 5, cities: 4, roads: 15 });
@@ -45,28 +48,32 @@ describe("createGame", () => {
   });
 
   it("places the robber on the desert", () => {
-    const state = createGame({ playerIds: ["a", "b"], seed: 1 });
+    const state = createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: 1 });
     const desert = state.board.tiles.find((t) => t.terrain === "desert")!;
     expect(state.robber).toEqual(desert.hex);
   });
 
   it("is deterministic for a given seed", () => {
-    const a = createGame({ playerIds: ["a", "b"], seed: "fixed" });
-    const b = createGame({ playerIds: ["a", "b"], seed: "fixed" });
+    const a = createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: "fixed" });
+    const b = createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: "fixed" });
     expect(a).toEqual(b);
   });
 });
 
 describe("setup phase — PLACE_SETTLEMENT / PLACE_ROAD", () => {
   function twoPlayerGame(): GameState {
-    return createGame({ playerIds: ["a", "b"], seed: "setup-test" });
+    return createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: "setup-test" });
   }
 
   it("rejects a settlement placement from the wrong player", () => {
     const state = twoPlayerGame();
     const [hex] = state.board.tiles;
     const vertex = verticesOfHex(hex!.hex)[0]!;
-    const result = applyAction(state, { type: "PLACE_SETTLEMENT", playerId: "b", vertex });
+    const result = applyAction([BASE_MODULE], state, {
+      type: "PLACE_SETTLEMENT",
+      playerId: "b",
+      vertex,
+    });
     expect(isRuleError(result)).toBe(true);
     if (isRuleError(result)) expect(result.code).toBe("NOT_YOUR_TURN");
   });
@@ -75,7 +82,7 @@ describe("setup phase — PLACE_SETTLEMENT / PLACE_ROAD", () => {
     const state = twoPlayerGame();
     const hex = state.board.tiles[0]!.hex;
     const edge = edgesOfVertex(verticesOfHex(hex)[0]!)[0];
-    const result = applyAction(state, { type: "PLACE_ROAD", playerId: "a", edge });
+    const result = applyAction([BASE_MODULE], state, { type: "PLACE_ROAD", playerId: "a", edge });
     expect(isRuleError(result)).toBe(true);
     if (isRuleError(result)) expect(result.code).toBe("SETTLEMENT_EXPECTED");
   });
@@ -122,7 +129,7 @@ describe("setup phase — PLACE_SETTLEMENT / PLACE_ROAD", () => {
     const farEdge = edgesOfVertex(farVertex)[0];
     expect(edgesOfVertex(vertex).some((e) => e.id === farEdge.id)).toBe(false);
 
-    const result = applyAction(afterSettlement.state, {
+    const result = applyAction([BASE_MODULE], afterSettlement.state, {
       type: "PLACE_ROAD",
       playerId: "a",
       edge: farEdge,
@@ -142,7 +149,7 @@ describe("setup phase — PLACE_SETTLEMENT / PLACE_ROAD", () => {
     // b's turn now; try to place adjacent to a's settlement (illegal: too close).
     const target = neighborVertices(vertex)[0]!;
 
-    const result = applyAction(afterRoad.state, {
+    const result = applyAction([BASE_MODULE], afterRoad.state, {
       type: "PLACE_SETTLEMENT",
       playerId: "b",
       vertex: target,

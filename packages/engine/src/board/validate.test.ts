@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { generateBoard } from "./generate.js";
+import { BASE_BOARD_SPEC, generateBoard } from "./generate.js";
 import { validateBoard } from "./validate.js";
 import type { Board, HexTile } from "../types.js";
 
 function validBoard(): Board {
-  return generateBoard({ seed: "validator-fixture" });
+  return generateBoard(BASE_BOARD_SPEC, { seed: "validator-fixture" });
 }
 
 describe("validateBoard — legal boards", () => {
   it("returns no errors for a freshly generated board", () => {
-    expect(validateBoard(validBoard())).toEqual([]);
+    expect(validateBoard(validBoard(), BASE_BOARD_SPEC)).toEqual([]);
   });
 });
 
@@ -19,7 +19,7 @@ describe("validateBoard — illegal boards", () => {
     const tiles: HexTile[] = board.tiles.map((tile, i) =>
       i === 0 ? { ...tile, terrain: "wood" } : tile,
     );
-    const errors = validateBoard({ ...board, tiles });
+    const errors = validateBoard({ ...board, tiles }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "TERRAIN_COUNT_MISMATCH")).toBe(true);
   });
 
@@ -28,7 +28,7 @@ describe("validateBoard — illegal boards", () => {
     const tiles: HexTile[] = board.tiles.map((tile) =>
       tile.terrain === "desert" ? { ...tile, number: 6 } : tile,
     );
-    const errors = validateBoard({ ...board, tiles });
+    const errors = validateBoard({ ...board, tiles }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "DESERT_HAS_NUMBER")).toBe(true);
   });
 
@@ -38,7 +38,7 @@ describe("validateBoard — illegal boards", () => {
     const tiles: HexTile[] = board.tiles.map((tile) =>
       tile === target ? { ...tile, number: null } : tile,
     );
-    const errors = validateBoard({ ...board, tiles });
+    const errors = validateBoard({ ...board, tiles }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "MISSING_NUMBER")).toBe(true);
   });
 
@@ -48,7 +48,7 @@ describe("validateBoard — illegal boards", () => {
     const tiles: HexTile[] = board.tiles.map((tile) =>
       tile === target ? { ...tile, number: 7 } : tile,
     );
-    const errors = validateBoard({ ...board, tiles });
+    const errors = validateBoard({ ...board, tiles }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "INVALID_NUMBER")).toBe(true);
   });
 
@@ -58,7 +58,7 @@ describe("validateBoard — illegal boards", () => {
     const tiles: HexTile[] = board.tiles.map((tile) =>
       tile.number === 2 ? { ...tile, number: 3 } : tile,
     );
-    const errors = validateBoard({ ...board, tiles });
+    const errors = validateBoard({ ...board, tiles }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "NUMBER_COUNT_MISMATCH")).toBe(true);
   });
 
@@ -88,14 +88,14 @@ describe("validateBoard — illegal boards", () => {
     const tiles: HexTile[] = board.tiles.map((tile) =>
       tile === target ? { ...tile, number: forcedNumber } : tile,
     );
-    const errors = validateBoard({ ...board, tiles });
+    const errors = validateBoard({ ...board, tiles }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "ADJACENT_RED_NUMBERS")).toBe(true);
   });
 
   it("flags wrong harbor counts", () => {
     const board = validBoard();
     const harbors = board.harbors.slice(1); // drop one harbor
-    const errors = validateBoard({ ...board, harbors });
+    const errors = validateBoard({ ...board, harbors }, BASE_BOARD_SPEC);
     expect(errors.some((e) => e.code === "HARBOR_COUNT_MISMATCH")).toBe(true);
   });
 });

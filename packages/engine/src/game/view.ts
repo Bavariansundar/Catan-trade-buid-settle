@@ -1,5 +1,6 @@
 import type { Hex } from "../coordinates.js";
 import type { Board, PlayerId } from "../types.js";
+import type { RuleModule } from "./module.js";
 import { handTotal } from "./resources.js";
 import { computePublicVictoryPoints } from "./victory.js";
 import type {
@@ -69,10 +70,14 @@ function redactPlayer(state: GameState, player: Player, viewerId: PlayerId): Red
  * the dev card deck is collapsed to its remaining size. Everything else
  * (board, buildings, roads, bank, awards, trade offers) is public.
  */
-export function viewFor(state: GameState, viewerId: PlayerId): GameView {
+export function viewFor(
+  modules: readonly RuleModule[],
+  state: GameState,
+  viewerId: PlayerId,
+): GameView {
   const publicVictoryPoints = new Map<PlayerId, number>();
   for (const player of state.players) {
-    publicVictoryPoints.set(player.id, computePublicVictoryPoints(state, player.id));
+    publicVictoryPoints.set(player.id, computePublicVictoryPoints(modules, state, player.id));
   }
 
   return {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateBoard } from "./generate.js";
+import { BASE_BOARD_SPEC, generateBoard } from "./generate.js";
 import { validateBoard } from "./validate.js";
 
 const BOARD_COUNT = 10_000;
@@ -10,9 +10,9 @@ describe("generateBoard property test (10,000 boards)", () => {
     let identicalConsecutivePairs = 0;
 
     for (let seed = 0; seed < BOARD_COUNT; seed++) {
-      const board = generateBoard({ seed });
+      const board = generateBoard(BASE_BOARD_SPEC, { seed });
 
-      const errors = validateBoard(board);
+      const errors = validateBoard(board, BASE_BOARD_SPEC);
       if (errors.length > 0) {
         throw new Error(
           `Board for seed ${String(seed)} failed validation: ${JSON.stringify(errors)}`,
@@ -37,7 +37,7 @@ describe("generateBoard property test (10,000 boards)", () => {
   it("produces a healthy spread of distinct layouts across 10,000 seeds", () => {
     const signatures = new Set<string>();
     for (let seed = 0; seed < BOARD_COUNT; seed++) {
-      const board = generateBoard({ seed });
+      const board = generateBoard(BASE_BOARD_SPEC, { seed });
       signatures.add(board.tiles.map((t) => `${t.terrain}:${String(t.number)}`).join(","));
     }
     // With 19!/(4!4!4!3!3!1!) * (18 numbers arrangements) possible layouts,

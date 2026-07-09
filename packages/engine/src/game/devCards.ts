@@ -24,13 +24,13 @@ function findPlayer(state: GameState, playerId: string): Player | undefined {
   return state.players.find((p) => p.id === playerId);
 }
 
+/**
+ * Phase/turn gating is the dispatcher's job (see `requireBuildGate` in
+ * game/modules/base.ts) — externalized so five-six-players can extend it to
+ * also allow buying during the special build phase, matching building.ts's
+ * validate* functions, which never gated on phase/turn themselves either.
+ */
 export function validateBuyDevCard(state: GameState, playerId: string): RuleError | null {
-  if (state.phase.name !== "main") {
-    return { code: "WRONG_PHASE", message: "Can only buy a dev card during the main phase" };
-  }
-  if (state.players[state.currentPlayerIndex]?.id !== playerId) {
-    return { code: "NOT_YOUR_TURN", message: `It is not ${playerId}'s turn` };
-  }
   const player = findPlayer(state, playerId);
   if (!player) return { code: "UNKNOWN_PLAYER", message: `No such player ${playerId}` };
   if (state.devDeck.length === 0) {

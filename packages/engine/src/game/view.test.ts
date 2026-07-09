@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BASE_MODULE } from "./modules/base.js";
 import { viewFor } from "./view.js";
 import { testGameState } from "./testFixtures.js";
 
@@ -17,7 +18,7 @@ describe("viewFor", () => {
         testGameState().players[1]!,
       ],
     });
-    const view = viewFor(state, "p1");
+    const view = viewFor([BASE_MODULE], state, "p1");
     const self = view.players.find((p) => p.id === "p1")!;
     expect(self.hand).toEqual({ wood: 3, wheat: 1, sheep: 0, brick: 2, ore: 0 });
     expect(self.handCount).toBe(6);
@@ -39,7 +40,7 @@ describe("viewFor", () => {
         },
       ],
     });
-    const view = viewFor(state, "p1");
+    const view = viewFor([BASE_MODULE], state, "p1");
     const opponent = view.players.find((p) => p.id === "p2")!;
     expect(opponent.hand).toBeNull();
     expect(opponent.handCount).toBe(6);
@@ -49,14 +50,14 @@ describe("viewFor", () => {
 
   it("collapses the dev deck to a count with no order or contents", () => {
     const state = testGameState({ devDeck: ["knight", "monopoly", "victory_point"] });
-    const view = viewFor(state, "p1");
+    const view = viewFor([BASE_MODULE], state, "p1");
     expect(view.devDeckCount).toBe(3);
     expect(view).not.toHaveProperty("devDeck");
   });
 
   it("still exposes public info in full: board, buildings, roads, bank, awards", () => {
     const state = testGameState({ longestRoadPlayerId: "p2", largestArmyPlayerId: "p1" });
-    const view = viewFor(state, "p1");
+    const view = viewFor([BASE_MODULE], state, "p1");
     expect(view.board).toBe(state.board);
     expect(view.buildings).toBe(state.buildings);
     expect(view.roads).toBe(state.roads);
@@ -79,7 +80,7 @@ describe("viewFor", () => {
         testGameState().players[1]!,
       ],
     });
-    const view = viewFor(state, "p2");
+    const view = viewFor([BASE_MODULE], state, "p2");
     expect(view.publicVictoryPoints.get("p1")).toBe(0);
   });
 
@@ -87,7 +88,7 @@ describe("viewFor", () => {
     const state = testGameState({
       players: [{ ...testGameState().players[0]!, knightsPlayed: 2 }, testGameState().players[1]!],
     });
-    const view = viewFor(state, "p2");
+    const view = viewFor([BASE_MODULE], state, "p2");
     expect(view.players.find((p) => p.id === "p1")!.knightsPlayed).toBe(2);
   });
 });

@@ -1,12 +1,21 @@
 import type { PlayerId } from "../types.js";
 import { hiddenVictoryPointCount } from "./devCards.js";
+import type { RuleModule } from "./module.js";
 import type { GameState } from "./types.js";
 
 export const LONGEST_ROAD_VP = 2;
 export const LARGEST_ARMY_VP = 2;
 
-/** VP visible to everyone: buildings + Longest Road + Largest Army (no hidden VP cards). */
-export function computePublicVictoryPoints(state: GameState, playerId: PlayerId): number {
+/**
+ * VP visible to everyone: buildings + Longest Road + Largest Army + any
+ * module-contributed public VP source (e.g. a future metropolis) — no
+ * hidden VP cards.
+ */
+export function computePublicVictoryPoints(
+  modules: readonly RuleModule[],
+  state: GameState,
+  playerId: PlayerId,
+): number {
   let points = 0;
   for (const building of state.buildings.values()) {
     if (building.playerId !== playerId) continue;
@@ -14,14 +23,21 @@ export function computePublicVictoryPoints(state: GameState, playerId: PlayerId)
   }
   if (state.longestRoadPlayerId === playerId) points += LONGEST_ROAD_VP;
   if (state.largestArmyPlayerId === playerId) points += LARGEST_ARMY_VP;
+  for (const module of modules) {
+    points += module.extraVictoryPoints?.(state, playerId) ?? 0;
+  }
   return points;
 }
 
 /** Total VP for `playerId`, including their own hidden VP dev cards. */
-export function computeVictoryPoints(state: GameState, playerId: PlayerId): number {
+export function computeVictoryPoints(
+  modules: readonly RuleModule[],
+  state: GameState,
+  playerId: PlayerId,
+): number {
   const player = state.players.find((p) => p.id === playerId);
   if (!player) return 0;
-  return computePublicVictoryPoints(state, playerId) + hiddenVictoryPointCount(player);
+  return computePublicVictoryPoints(modules, state, playerId) + hiddenVictoryPointCount(player);
 }
 
 /**
@@ -30,6 +46,10 @@ export function computeVictoryPoints(state: GameState, playerId: PlayerId): numb
  * side effects landing on someone else, e.g. Longest Road transferring to a
  * third party because the current player built a settlement.
  */
-export function hasWon(state: GameState, playerId: PlayerId): boolean {
-  return computeVictoryPoints(state, playerId) >= state.targetVictoryPoints;
+export function hasWon(
+  modules: readonly RuleModule[],
+  state: GameState,
+  playerId: PlayerId,
+): boolean {
+  return computeVictoryPoints(modules, state, playerId) >= state.targetVictoryPoints;
 }
