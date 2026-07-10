@@ -1,4 +1,4 @@
-import type { GameState } from "@hexhaven/engine";
+import type { GameState, GameView } from "@hexhaven/engine";
 
 /**
  * `GameState` uses `ReadonlyMap`/`ReadonlySet` throughout (buildings, roads,
@@ -73,4 +73,22 @@ export function deserializeGameState(json: Json): GameState {
       : null,
     phase,
   } as unknown as GameState;
+}
+
+/**
+ * `GameView` (the redacted per-player projection sent to socket clients) has
+ * its own, smaller set of Map fields — `buildings`, `roads`, `tradeOffers`,
+ * `publicVictoryPoints` — which need the same array-of-entries treatment
+ * before crossing the wire, or a client-side Socket.IO consumer receives
+ * plain `{}` in their place (Socket.IO JSON-encodes emitted payloads, and
+ * `Map` has no native JSON representation). See gameSocket.ts's emit sites.
+ */
+export function serializeGameView(view: GameView): Json {
+  return {
+    ...view,
+    buildings: mapToEntries(view.buildings),
+    roads: mapToEntries(view.roads),
+    tradeOffers: mapToEntries(view.tradeOffers),
+    publicVictoryPoints: mapToEntries(view.publicVictoryPoints),
+  };
 }

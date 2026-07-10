@@ -8,6 +8,7 @@ import {
 } from "@hexhaven/engine";
 import type { GameRuntimeService } from "../game/gameRuntime.js";
 import type { GameStateCache } from "../game/gameStateCache.js";
+import { serializeGameView } from "../game/serialization.js";
 import type { AppServer, AppSocket } from "./types.js";
 
 function gameRoom(gameId: string): string {
@@ -56,7 +57,7 @@ class GameBroadcaster {
       const isPlayer = config.seatPlayerIds.includes(socket.data.userId);
       const viewerId = isPlayer ? socket.data.userId : SPECTATOR_VIEWER_ID;
       socket.emit("game:update", {
-        view: viewFor(modules as RuleModule[], state, viewerId),
+        view: serializeGameView(viewFor(modules as RuleModule[], state, viewerId)),
         events,
         latestSeq,
       });
@@ -95,7 +96,7 @@ export function registerGameSocketHandlers(
       const replay = await gameRuntime.replayEventsSince(payload.gameId, payload.lastSeenSeq);
       if (replay) {
         socket.emit("game:update", {
-          view: viewFor(loaded.modules as RuleModule[], replay.state, viewerId),
+          view: serializeGameView(viewFor(loaded.modules as RuleModule[], replay.state, viewerId)),
           events: replay.events,
           latestSeq: await gameRuntime.getLatestSeq(payload.gameId),
         });
@@ -103,7 +104,7 @@ export function registerGameSocketHandlers(
       }
     }
     socket.emit("game:update", {
-      view: viewFor(loaded.modules as RuleModule[], loaded.state, viewerId),
+      view: serializeGameView(viewFor(loaded.modules as RuleModule[], loaded.state, viewerId)),
       events: [],
       latestSeq: await gameRuntime.getLatestSeq(payload.gameId),
     });

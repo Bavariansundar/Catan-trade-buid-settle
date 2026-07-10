@@ -1,10 +1,15 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { App } from "./App.js";
 
-describe("web scaffold", () => {
-  it("renders the app shell", () => {
-    render(<App />);
+describe("web app shell", () => {
+  it("renders the header/nav", () => {
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
     expect(screen.getByText("Hexhaven")).toBeInTheDocument();
   });
 });
