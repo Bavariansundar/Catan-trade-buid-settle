@@ -11,6 +11,11 @@ export function buildSwaggerSpec(): object {
         },
       },
     },
-    apis: ["./src/auth/authRoutes.ts", "./src/lobby/lobbyRoutes.ts"],
+    apis: [
+      "./src/auth/authRoutes.ts",
+      "./src/lobby/lobbyRoutes.ts",
+      "./src/stats/historyRoutes.ts",
+      "./src/stats/profileRoutes.ts",
+    ],
   });
 }

@@ -60,4 +60,20 @@ describe("serializeGameView", () => {
     expect(Array.isArray(wired["tradeOffers"])).toBe(true);
     expect(Array.isArray(wired["publicVictoryPoints"])).toBe(true);
   });
+
+  it("turns the nested discard-phase pending Map into a JSON-safe array of entries", () => {
+    const state = createGame([BASE_MODULE], { playerIds: ["a", "b"], seed: "view-discard" });
+    const discarding = {
+      ...state,
+      phase: { name: "discard" as const, pending: new Map([["a", 4]]) },
+    };
+    const view = viewFor([BASE_MODULE], discarding, "a");
+
+    const wired = JSON.parse(JSON.stringify(serializeGameView(view))) as {
+      phase: { name: string; pending: [string, number][] };
+    };
+
+    expect(wired.phase.name).toBe("discard");
+    expect(wired.phase.pending).toEqual([["a", 4]]);
+  });
 });

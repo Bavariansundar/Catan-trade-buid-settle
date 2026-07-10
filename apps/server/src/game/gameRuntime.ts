@@ -14,6 +14,7 @@ import {
 } from "@hexhaven/engine";
 import type { AppConfig } from "../config.js";
 import type { BotDifficulty, GameConfigSnapshot, LobbyRecord } from "../domain/types.js";
+import type { MatchRecorder } from "../stats/matchRecorder.js";
 import type { GameRepository } from "./gameRepository.js";
 import type { GameStateCache } from "./gameStateCache.js";
 import { resolveModules } from "./moduleResolver.js";
@@ -47,6 +48,8 @@ export class GameRuntimeService {
     private readonly games: GameRepository,
     private readonly cache: GameStateCache,
     private readonly config: AppConfig,
+    /** Optional: not every caller (e.g. existing tests, single-player-only setups) needs match history/stats/achievements recorded. */
+    private readonly matchRecorder?: MatchRecorder,
   ) {}
 
   async startGame(lobby: LobbyRecord): Promise<{ gameId: string; state: GameState }> {
@@ -66,6 +69,10 @@ export class GameRuntimeService {
       botSeats,
     };
     const game = await this.games.create({ lobbyId: lobby.id, seed, configJson: config });
+    const humanParticipants = lobby.seats
+      .filter((s): s is typeof s & { userId: string } => s.userId !== null)
+      .map((s) => ({ userId: s.userId, seatIndex: s.seatIndex }));
+    await this.games.addParticipants(game.id, humanParticipants);
     const initialState = createGame(modules, {
       playerIds: seatPlayerIds,
       seed,
@@ -209,8 +216,9 @@ export class GameRuntimeService {
     }
 
     if (current.phase.name === "ended") {
-      await this.games.markEnded(gameId, current.phase.winner);
+      const gameRecord = await this.games.markEnded(gameId, current.phase.winner);
       this.clearTurnTimer(gameId);
+      if (this.matchRecorder) await this.matchRecorder.recordGameEnded(gameRecord);
     } else {
       this.armTurnTimer(gameId, config.turnTimerSeconds, current);
     }

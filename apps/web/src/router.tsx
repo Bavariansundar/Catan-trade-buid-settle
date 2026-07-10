@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { App } from "./App.js";
+import { GameDetailScreen } from "./screens/GameDetailScreen.js";
 import { HistoryScreen } from "./screens/HistoryScreen.js";
 import { HomeScreen } from "./screens/HomeScreen.js";
 import { LobbyBrowserScreen } from "./screens/LobbyBrowserScreen.js";
@@ -9,7 +10,6 @@ import { MultiplayerGameScreen } from "./screens/MultiplayerGameScreen.js";
 import { ProfileScreen } from "./screens/ProfileScreen.js";
 import { RegisterScreen } from "./screens/RegisterScreen.js";
 import { SinglePlayerScreen } from "./screens/SinglePlayerScreen.js";
-import { StatsScreen } from "./screens/StatsScreen.js";
 
 export const router = createBrowserRouter([
   {
@@ -24,7 +24,7 @@ export const router = createBrowserRouter([
       { path: "lobby/:lobbyId", element: <LobbyRoomScreen /> },
       { path: "game/:gameId", element: <MultiplayerGameScreen /> },
       { path: "history", element: <HistoryScreen /> },
-      { path: "stats", element: <StatsScreen /> },
+      { path: "history/:gameId", element: <GameDetailScreen /> },
       { path: "profile", element: <ProfileScreen /> },
     ],
   },

@@ -26,10 +26,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
-  hostedLobbies Lobby[]        @relation("LobbyHost")
-  lobbySeats    LobbySeat[]
-  stats         PlayerStats?
+  refreshTokens    RefreshToken[]
+  hostedLobbies    Lobby[]           @relation("LobbyHost")
+  lobbySeats       LobbySeat[]
+  stats            PlayerStats?
+  gameParticipants GameParticipant[]
+  achievements     Achievement[]
 }
 
 /// Opaque random tokens, stored only as a hash — rotation chain for reuse detection (see docs/architecture/server.md §2).
@@ -108,7 +110,22 @@ model Game {
   startedAt  DateTime   @default(now())
   endedAt    DateTime?
 
-  actions GameAction[]
+  actions      GameAction[]
+  participants GameParticipant[]
+}
+
+/// One row per human (bot seats are excluded — they have no `User`) — lets
+/// match history / stats be queried by user without scanning every game's
+/// JSON `configJson.seatPlayerIds`. Populated once, at game start.
+model GameParticipant {
+  gameId    String
+  game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+  seatIndex Int
+
+  @@id([gameId, userId])
+  @@index([userId])
 }
 
 /// The event-sourced action log — the only durable source of truth for game
@@ -127,9 +144,29 @@ model GameAction {
 }
 
 model PlayerStats {
-  userId      String   @id
-  user        User     @relation(fields: [userId], references: [id])
-  gamesPlayed Int      @default(0)
-  gamesWon    Int      @default(0)
-  updatedAt   DateTime @updatedAt
+  userId              String   @id
+  user                User     @relation(fields: [userId], references: [id])
+  gamesPlayed         Int      @default(0)
+  gamesWon            Int      @default(0)
+  /// Elo-style rating per player count, e.g. `{"2": 1214, "4": 1180}` — a
+  /// player's 2-player and 4-player skill are different enough games that
+  /// pooling them into one number would be misleading. Keyed by the game's
+  /// seat count as a string (JSON object keys are always strings).
+  ratingByPlayerCount Json     @default("{}")
+  updatedAt           DateTime @updatedAt
+}
+
+/// Unlocked once per (user, achievementId) — see stats/achievements.ts for
+/// the roster and unlock conditions. `gameId` is the game that triggered the
+/// unlock, kept for context even though achievements are permanent.
+model Achievement {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  achievementId String
+  gameId        String?
+  unlockedAt    DateTime @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
 }

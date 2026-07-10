@@ -31,7 +31,6 @@ export function App() {
           <Link to="/play">Single Player</Link>
           {user && <Link to="/lobbies">Lobbies</Link>}
           {user && <Link to="/history">History</Link>}
-          {user && <Link to="/stats">Stats</Link>}
         </nav>
         <div style={{ marginLeft: "auto", fontSize: "0.9rem" }}>
           {user ? <Link to="/profile">{user.displayName}</Link> : <Link to="/login">Sign In</Link>}

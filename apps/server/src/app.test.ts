@@ -4,8 +4,13 @@ import { AuthService } from "./auth/authService.js";
 import { InMemoryRefreshTokenRepository } from "./auth/refreshTokenRepository.js";
 import { InMemoryUserRepository } from "./auth/userRepository.js";
 import { loadConfig } from "./config.js";
+import { InMemoryGameRepository } from "./game/gameRepository.js";
 import { InMemoryLobbyRepository } from "./lobby/lobbyRepository.js";
 import { LobbyService } from "./lobby/lobbyService.js";
+import { InMemoryAchievementRepository } from "./stats/achievementRepository.js";
+import { HistoryService } from "./stats/historyService.js";
+import { InMemoryPlayerStatsRepository } from "./stats/playerStatsRepository.js";
+import { ProfileService } from "./stats/profileService.js";
 
 function buildTestApp() {
   const config = loadConfig({
@@ -18,7 +23,12 @@ function buildTestApp() {
     config,
   );
   const lobbyService = new LobbyService(new InMemoryLobbyRepository());
-  return createApp({ config, authService, lobbyService });
+  const historyService = new HistoryService(new InMemoryGameRepository());
+  const profileService = new ProfileService(
+    new InMemoryPlayerStatsRepository(),
+    new InMemoryAchievementRepository(),
+  );
+  return createApp({ config, authService, lobbyService, historyService, profileService });
 }
 
 describe("server scaffold", () => {

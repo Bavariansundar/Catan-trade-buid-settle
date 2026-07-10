@@ -76,19 +76,29 @@ export function approxLegalActions(view: GameView, viewerId: PlayerId): LegalAct
     }
   }
 
+  const setupPhase = view.phase.name === "setup" ? view.phase : null;
+
   const roadEdgeIds: string[] = [];
   if (me && me.pieces.roads > 0) {
     for (const edge of edges) {
       if (view.roads.has(edge.id)) continue;
       const [a, b] = verticesOfEdge(edge);
-      const touchesMine = [a, b].some(
-        (v) => view.buildings.get(v.id)?.playerId === viewerId || touchesOwnRoad(v.id),
-      );
-      if (!touchesMine) continue;
-      if (inSetup) {
-        if (isSetupTurnFor(view, viewerId) && view.phase.awaitingRoad) roadEdgeIds.push(edge.id);
-      } else if (inMain && isMyTurn && hand && canAfford(hand, BUILD_COSTS.road)) {
-        roadEdgeIds.push(edge.id);
+      if (setupPhase) {
+        // Setup roads must touch the settlement just placed this turn, not just any
+        // of the player's buildings — see setup.ts's validatePlaceRoad NOT_CONNECTED check.
+        const touchesLastSettlement =
+          setupPhase.lastSettlementVertex &&
+          [a, b].some((v) => v.id === setupPhase.lastSettlementVertex!.id);
+        if (isSetupTurnFor(view, viewerId) && setupPhase.awaitingRoad && touchesLastSettlement) {
+          roadEdgeIds.push(edge.id);
+        }
+      } else {
+        const touchesMine = [a, b].some(
+          (v) => view.buildings.get(v.id)?.playerId === viewerId || touchesOwnRoad(v.id),
+        );
+        if (touchesMine && inMain && isMyTurn && hand && canAfford(hand, BUILD_COSTS.road)) {
+          roadEdgeIds.push(edge.id);
+        }
       }
     }
   }

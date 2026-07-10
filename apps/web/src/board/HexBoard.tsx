@@ -224,8 +224,14 @@ export function HexBoard({
         const p = vertexToPixel(vertex);
         if (building) {
           const color = playerColors[building.playerId] ?? "#fff";
+          // A settlement can be a legal city-upgrade target while still occupied —
+          // give it a click handler and highlight ring, or "Build City" mode has
+          // nothing on the board to click.
+          const groupProps = isLegal
+            ? { onClick: () => onVertexClick?.(vertex), style: { cursor: "pointer" } }
+            : {};
           return building.type === "city" ? (
-            <g key={`v-${vertex.id}`}>
+            <g key={`v-${vertex.id}`} {...groupProps}>
               <rect
                 x={p.x - HEX_SIZE * 0.22}
                 y={p.y - HEX_SIZE * 0.18}
@@ -242,7 +248,16 @@ export function HexBoard({
               />
             </g>
           ) : (
-            <g key={`v-${vertex.id}`}>
+            <g key={`v-${vertex.id}`} {...groupProps}>
+              {isLegal && (
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={HEX_SIZE * 0.24}
+                  fill="var(--hh-accent)"
+                  opacity={0.4}
+                />
+              )}
               <polygon
                 points={`${p.x},${p.y - HEX_SIZE * 0.26} ${p.x + HEX_SIZE * 0.18},${p.y - HEX_SIZE * 0.08} ${p.x + HEX_SIZE * 0.18},${p.y + HEX_SIZE * 0.16} ${p.x - HEX_SIZE * 0.18},${p.y + HEX_SIZE * 0.16} ${p.x - HEX_SIZE * 0.18},${p.y - HEX_SIZE * 0.08}`}
                 fill={color}

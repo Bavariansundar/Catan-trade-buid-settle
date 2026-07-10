@@ -12,6 +12,11 @@ import { RedisGameStateCache } from "./game/gameStateCache.js";
 import { PrismaLobbyRepository } from "./lobby/lobbyRepository.js";
 import { LobbyService } from "./lobby/lobbyService.js";
 import { createSocketServer } from "./socket/server.js";
+import { PrismaAchievementRepository } from "./stats/achievementRepository.js";
+import { HistoryService } from "./stats/historyService.js";
+import { MatchRecorder } from "./stats/matchRecorder.js";
+import { PrismaPlayerStatsRepository } from "./stats/playerStatsRepository.js";
+import { ProfileService } from "./stats/profileService.js";
 
 const config = loadConfig();
 const prisma = new PrismaClient();
@@ -24,9 +29,19 @@ const authService = new AuthService(
 );
 const lobbyService = new LobbyService(new PrismaLobbyRepository(prisma));
 const cache = new RedisGameStateCache(redis);
-const gameRuntime = new GameRuntimeService(new PrismaGameRepository(prisma), cache, config);
+const gameRepository = new PrismaGameRepository(prisma);
+const playerStatsRepository = new PrismaPlayerStatsRepository(prisma);
+const achievementRepository = new PrismaAchievementRepository(prisma);
+const matchRecorder = new MatchRecorder(
+  gameRepository,
+  playerStatsRepository,
+  achievementRepository,
+);
+const gameRuntime = new GameRuntimeService(gameRepository, cache, config, matchRecorder);
+const historyService = new HistoryService(gameRepository);
+const profileService = new ProfileService(playerStatsRepository, achievementRepository);
 
-const app = createApp({ config, authService, lobbyService });
+const app = createApp({ config, authService, lobbyService, historyService, profileService });
 const httpServer = createServer(app);
 createSocketServer(httpServer, { config, lobbyService, gameRuntime, cache });
 

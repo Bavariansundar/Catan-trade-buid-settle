@@ -85,4 +85,38 @@ export interface PlayerStatsRecord {
   readonly userId: string;
   readonly gamesPlayed: number;
   readonly gamesWon: number;
+  /** Elo-style rating keyed by seat count (as a string — JSON object keys always are). */
+  readonly ratingByPlayerCount: Readonly<Record<string, number>>;
+}
+
+/** One row per human seat (bot seats have no `User`, so they're never recorded). */
+export interface GameParticipantRecord {
+  readonly gameId: string;
+  readonly userId: string;
+  readonly seatIndex: number;
+}
+
+export type AchievementId =
+  | "first_win"
+  | "ten_wins"
+  | "longest_road_master"
+  | "largest_army_commander"
+  | "trade_baron"
+  | "lucky_seven"
+  | "settler"
+  | "city_builder"
+  | "robber_baron"
+  | "flawless_victory";
+
+export interface AchievementRecord {
+  readonly userId: string;
+  readonly achievementId: AchievementId;
+  readonly gameId: string | null;
+  readonly unlockedAt: Date;
+}
+
+export interface Page<T> {
+  readonly items: readonly T[];
+  /** Pass back as `cursor` to fetch the next page; `null` means this is the last page. */
+  readonly nextCursor: string | null;
 }

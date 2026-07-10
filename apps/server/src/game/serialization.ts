@@ -77,18 +77,29 @@ export function deserializeGameState(json: Json): GameState {
 
 /**
  * `GameView` (the redacted per-player projection sent to socket clients) has
- * its own, smaller set of Map fields — `buildings`, `roads`, `tradeOffers`,
- * `publicVictoryPoints` — which need the same array-of-entries treatment
- * before crossing the wire, or a client-side Socket.IO consumer receives
- * plain `{}` in their place (Socket.IO JSON-encodes emitted payloads, and
- * `Map` has no native JSON representation). See gameSocket.ts's emit sites.
+ * its own, smaller set of top-level Map fields — `buildings`, `roads`,
+ * `tradeOffers`, `publicVictoryPoints` — which need the same array-of-entries
+ * treatment before crossing the wire, or a client-side Socket.IO consumer
+ * receives plain `{}` in their place (Socket.IO JSON-encodes emitted
+ * payloads, and `Map` has no native JSON representation). See
+ * gameSocket.ts's emit sites.
+ *
+ * `view.phase` is the same `Phase` union as `GameState.phase`, so it carries
+ * the same nested `pending` Map when `phase.name` is "discard" or
+ * "barbarianTribute" — handled here the same way `serializeGameState` does.
  */
 export function serializeGameView(view: GameView): Json {
+  let serializedPhase: Json = view.phase;
+  if (view.phase.name === "discard" || view.phase.name === "barbarianTribute") {
+    serializedPhase = { ...view.phase, pending: mapToEntries(view.phase.pending) };
+  }
+
   return {
     ...view,
     buildings: mapToEntries(view.buildings),
     roads: mapToEntries(view.roads),
     tradeOffers: mapToEntries(view.tradeOffers),
     publicVictoryPoints: mapToEntries(view.publicVictoryPoints),
+    phase: serializedPhase,
   };
 }

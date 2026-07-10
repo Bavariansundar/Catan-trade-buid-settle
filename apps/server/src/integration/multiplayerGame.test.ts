@@ -15,6 +15,11 @@ import { InMemoryGameStateCache } from "../game/gameStateCache.js";
 import { InMemoryLobbyRepository } from "../lobby/lobbyRepository.js";
 import { LobbyService } from "../lobby/lobbyService.js";
 import { createSocketServer } from "../socket/server.js";
+import { InMemoryAchievementRepository } from "../stats/achievementRepository.js";
+import { HistoryService } from "../stats/historyService.js";
+import { MatchRecorder } from "../stats/matchRecorder.js";
+import { InMemoryPlayerStatsRepository } from "../stats/playerStatsRepository.js";
+import { ProfileService } from "../stats/profileService.js";
 
 const bot = new RuleBasedBot();
 
@@ -52,9 +57,19 @@ describe("full multiplayer game over Socket.IO, including a mid-game reconnect",
     );
     const lobbyService = new LobbyService(new InMemoryLobbyRepository());
     const cache = new InMemoryGameStateCache();
-    const gameRuntime = new GameRuntimeService(new InMemoryGameRepository(), cache, config);
+    const gameRepository = new InMemoryGameRepository();
+    const playerStatsRepository = new InMemoryPlayerStatsRepository();
+    const achievementRepository = new InMemoryAchievementRepository();
+    const matchRecorder = new MatchRecorder(
+      gameRepository,
+      playerStatsRepository,
+      achievementRepository,
+    );
+    const gameRuntime = new GameRuntimeService(gameRepository, cache, config, matchRecorder);
+    const historyService = new HistoryService(gameRepository);
+    const profileService = new ProfileService(playerStatsRepository, achievementRepository);
 
-    const app = createApp({ config, authService, lobbyService });
+    const app = createApp({ config, authService, lobbyService, historyService, profileService });
     const httpServer = createServer(app);
     createSocketServer(httpServer, { config, lobbyService, gameRuntime, cache });
 
@@ -191,6 +206,35 @@ describe("full multiplayer game over Socket.IO, including a mid-game reconnect",
       expect(sawReconnectReplay).toBe(true);
       const finalState = (await gameRuntime.loadGame(gameId)).state;
       expect(finalState.phase.name).toBe("ended");
+      const winnerId = finalState.phase.name === "ended" ? finalState.phase.winner : null;
+      const winnerToken = winnerId === aliceId ? aliceToken : bobToken;
+
+      // --- Match history + profile should reflect the just-finished game ---
+      const historyRes = await request(app)
+        .get("/history")
+        .set("Authorization", `Bearer ${winnerToken}`);
+      expect(historyRes.status).toBe(200);
+      const historyBody = historyRes.body as { items: { id: string; status: string }[] };
+      expect(historyBody.items.some((g) => g.id === gameId && g.status === "ENDED")).toBe(true);
+
+      const detailRes = await request(app)
+        .get(`/history/${gameId}`)
+        .set("Authorization", `Bearer ${winnerToken}`);
+      expect(detailRes.status).toBe(200);
+      const detailBody = detailRes.body as { stats: { winnerId: string } };
+      expect(detailBody.stats.winnerId).toBe(winnerId);
+
+      const profileRes = await request(app)
+        .get("/profile")
+        .set("Authorization", `Bearer ${winnerToken}`);
+      expect(profileRes.status).toBe(200);
+      const profileBody = profileRes.body as {
+        stats: { gamesPlayed: number; gamesWon: number };
+        achievements: { achievementId: string }[];
+      };
+      expect(profileBody.stats.gamesPlayed).toBe(1);
+      expect(profileBody.stats.gamesWon).toBe(1);
+      expect(profileBody.achievements.some((a) => a.achievementId === "first_win")).toBe(true);
 
       aliceSocket.disconnect();
       bobSocket.disconnect();

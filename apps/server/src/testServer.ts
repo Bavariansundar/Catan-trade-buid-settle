@@ -10,6 +10,11 @@ import { InMemoryGameStateCache } from "./game/gameStateCache.js";
 import { InMemoryLobbyRepository } from "./lobby/lobbyRepository.js";
 import { LobbyService } from "./lobby/lobbyService.js";
 import { createSocketServer } from "./socket/server.js";
+import { InMemoryAchievementRepository } from "./stats/achievementRepository.js";
+import { HistoryService } from "./stats/historyService.js";
+import { MatchRecorder } from "./stats/matchRecorder.js";
+import { InMemoryPlayerStatsRepository } from "./stats/playerStatsRepository.js";
+import { ProfileService } from "./stats/profileService.js";
 
 /**
  * A fully in-memory-backed server (see docs/architecture/server.md §0),
@@ -30,9 +35,19 @@ const authService = new AuthService(
 );
 const lobbyService = new LobbyService(new InMemoryLobbyRepository());
 const cache = new InMemoryGameStateCache();
-const gameRuntime = new GameRuntimeService(new InMemoryGameRepository(), cache, config);
+const gameRepository = new InMemoryGameRepository();
+const playerStatsRepository = new InMemoryPlayerStatsRepository();
+const achievementRepository = new InMemoryAchievementRepository();
+const matchRecorder = new MatchRecorder(
+  gameRepository,
+  playerStatsRepository,
+  achievementRepository,
+);
+const gameRuntime = new GameRuntimeService(gameRepository, cache, config, matchRecorder);
+const historyService = new HistoryService(gameRepository);
+const profileService = new ProfileService(playerStatsRepository, achievementRepository);
 
-const app = createApp({ config, authService, lobbyService });
+const app = createApp({ config, authService, lobbyService, historyService, profileService });
 const httpServer = createServer(app);
 createSocketServer(httpServer, { config, lobbyService, gameRuntime, cache });
 
