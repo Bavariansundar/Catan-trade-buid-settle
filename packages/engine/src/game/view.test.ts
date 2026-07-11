@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { BASE_MODULE } from "./modules/base.js";
-import { viewFor } from "./view.js";
+import { redactEventsFor, viewFor } from "./view.js";
 import { testGameState } from "./testFixtures.js";
+import type {
+  DevCardBoughtEvent,
+  DiscardedEvent,
+  ProgressCardDrawnEvent,
+  ResourceStolenEvent,
+  TurnStartedEvent,
+} from "./types.js";
 
 describe("viewFor", () => {
   it("shows the viewer's own hand and dev cards in full", () => {
@@ -111,5 +118,79 @@ describe("viewFor", () => {
     });
     const view = viewFor([BASE_MODULE], state, "p2");
     expect(view.players.find((p) => p.id === "p1")!.knightsPlayed).toBe(2);
+  });
+});
+
+describe("redactEventsFor", () => {
+  it("shows the discarding player their own discarded resources", () => {
+    const event: DiscardedEvent = {
+      type: "DISCARDED",
+      playerId: "p1",
+      resources: { wood: 2, brick: 1 },
+    };
+    const [redacted] = redactEventsFor([event], "p1");
+    expect(redacted).toEqual(event);
+  });
+
+  it("hides another player's discarded resources", () => {
+    const event: DiscardedEvent = {
+      type: "DISCARDED",
+      playerId: "p1",
+      resources: { wood: 2, brick: 1 },
+    };
+    const [redacted] = redactEventsFor([event], "p2");
+    expect(redacted).toEqual({ type: "DISCARDED", playerId: "p1" });
+    expect(redacted).not.toHaveProperty("resources");
+  });
+
+  it("hides discarded resources from a spectator (null viewer)", () => {
+    const event: DiscardedEvent = { type: "DISCARDED", playerId: "p1", resources: { ore: 1 } };
+    const [redacted] = redactEventsFor([event], null);
+    expect(redacted).not.toHaveProperty("resources");
+  });
+
+  it("shows the stolen resource type to the thief and the victim, hides it from everyone else", () => {
+    const event: ResourceStolenEvent = {
+      type: "RESOURCE_STOLEN",
+      thiefId: "p1",
+      victimId: "p2",
+      resource: "ore",
+    };
+    expect(redactEventsFor([event], "p1")[0]).toEqual(event);
+    expect(redactEventsFor([event], "p2")[0]).toEqual(event);
+    const [redactedForBystander] = redactEventsFor([event], "p3");
+    expect(redactedForBystander).toEqual({
+      type: "RESOURCE_STOLEN",
+      thiefId: "p1",
+      victimId: "p2",
+    });
+    expect(redactedForBystander).not.toHaveProperty("resource");
+  });
+
+  it("hides which dev card was bought from everyone but the buyer", () => {
+    const event: DevCardBoughtEvent = { type: "DEV_CARD_BOUGHT", playerId: "p1", card: "knight" };
+    expect(redactEventsFor([event], "p1")[0]).toEqual(event);
+    const [redacted] = redactEventsFor([event], "p2");
+    expect(redacted).toEqual({ type: "DEV_CARD_BOUGHT", playerId: "p1" });
+    expect(redacted).not.toHaveProperty("card");
+  });
+
+  it("hides which progress card was drawn from everyone but the drawer", () => {
+    const event: ProgressCardDrawnEvent = {
+      type: "PROGRESS_CARD_DRAWN",
+      playerId: "p1",
+      deck: "trade",
+      card: "bazaar",
+    };
+    expect(redactEventsFor([event], "p1")[0]).toEqual(event);
+    const [redacted] = redactEventsFor([event], "p2");
+    expect(redacted).toEqual({ type: "PROGRESS_CARD_DRAWN", playerId: "p1", deck: "trade" });
+    expect(redacted).not.toHaveProperty("card");
+  });
+
+  it("passes every other event type through unchanged, for any viewer", () => {
+    const event: TurnStartedEvent = { type: "TURN_STARTED", playerId: "p1" };
+    expect(redactEventsFor([event], "p2")[0]).toEqual(event);
+    expect(redactEventsFor([event], null)[0]).toEqual(event);
   });
 });

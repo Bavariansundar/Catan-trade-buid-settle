@@ -1,8 +1,8 @@
-import type { GameEvent } from "@hexhaven/engine";
+import type { RedactedGameEvent } from "@hexhaven/engine";
 import { formatEvent } from "./formatEvent.js";
 
 export interface ActionLogProps {
-  readonly log: readonly GameEvent[];
+  readonly log: readonly RedactedGameEvent[];
   readonly nameFor: (playerId: string) => string;
 }
 

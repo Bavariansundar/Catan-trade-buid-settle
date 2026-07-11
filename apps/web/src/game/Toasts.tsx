@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { GameEvent } from "@hexhaven/engine";
+import type { RedactedGameEvent } from "@hexhaven/engine";
 import { formatEvent } from "./formatEvent.js";
 
 interface ToastEntry {
@@ -10,7 +10,7 @@ interface ToastEntry {
 let nextId = 0;
 
 export interface ToastsProps {
-  readonly latestEvents: readonly GameEvent[];
+  readonly latestEvents: readonly RedactedGameEvent[];
   readonly nameFor: (playerId: string) => string;
 }
 

@@ -39,8 +39,34 @@ interface WirePlayer {
   readonly devCardCount: number;
 }
 
+interface WireGameEvent {
+  readonly type: string;
+  readonly playerId?: string;
+  readonly thiefId?: string;
+  readonly victimId?: string;
+  readonly resources?: unknown;
+  readonly resource?: unknown;
+  readonly card?: unknown;
+}
+
 interface WireGameUpdate {
   readonly view: { readonly players: readonly WirePlayer[] };
+  readonly events: readonly WireGameEvent[];
+}
+
+/** The four event types that carry a field only certain players are entitled to see — see packages/engine's redactEventsFor. */
+const SENSITIVE_EVENT_TYPES = new Set([
+  "DISCARDED",
+  "RESOURCE_STOLEN",
+  "DEV_CARD_BOUGHT",
+  "PROGRESS_CARD_DRAWN",
+]);
+
+function entitledPlayerIds(event: WireGameEvent): readonly string[] {
+  if (event.type === "RESOURCE_STOLEN") {
+    return [event.thiefId, event.victimId].filter((id): id is string => id !== undefined);
+  }
+  return event.playerId !== undefined ? [event.playerId] : [];
 }
 
 /**
@@ -170,6 +196,7 @@ describe("hidden information never leaks over game:update", () => {
       // Every update captured for every socket, across the whole game, must never
       // reveal another player's hand/dev cards — checked on the literal wire payload.
       let checkedAtLeastOnePayload = false;
+      let checkedAtLeastOneSensitiveEvent = false;
       for (const [socket, updates] of updatesBySocket) {
         expect(updates.length).toBeGreaterThan(0);
         const viewerPlayerId = playerIds.find((id) => socketByPlayerId[id] === socket) ?? null;
@@ -182,9 +209,23 @@ describe("hidden information never leaks over game:update", () => {
             expect(typeof player.handCount).toBe("number");
             expect(typeof player.devCardCount).toBe("number");
           }
+
+          // Same check for the event log alongside the view: DISCARDED.resources,
+          // RESOURCE_STOLEN.resource, DEV_CARD_BOUGHT.card, and PROGRESS_CARD_DRAWN.card
+          // must be absent unless this viewer is one of the entitled players.
+          for (const event of update.events) {
+            if (!SENSITIVE_EVENT_TYPES.has(event.type)) continue;
+            checkedAtLeastOneSensitiveEvent = true;
+            const entitled = entitledPlayerIds(event).includes(viewerPlayerId ?? "");
+            if (entitled) continue;
+            expect(event).not.toHaveProperty("resources");
+            expect(event).not.toHaveProperty("resource");
+            expect(event).not.toHaveProperty("card");
+          }
         }
       }
       expect(checkedAtLeastOnePayload).toBe(true);
+      expect(checkedAtLeastOneSensitiveEvent).toBe(true);
 
       for (const s of [...sockets, spectatorSocket]) s.disconnect();
     } finally {

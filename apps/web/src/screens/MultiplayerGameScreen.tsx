@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { Action, GameEvent, GameView } from "@hexhaven/engine";
+import type { Action, GameView, RedactedGameEvent } from "@hexhaven/engine";
 import type { Socket } from "socket.io-client";
 import { approxLegalActions } from "../game/approxLegalActions.js";
+import { deserializeGameEvents } from "../game/deserializeGameEvents.js";
 import { deserializeGameView } from "../game/deserializeGameView.js";
 import { GameTable } from "../game/GameTable.js";
 import { createGameSocket } from "../socket/socket.js";
 import { useAuthStore } from "../store/authStore.js";
 
 interface GameUpdateMessage {
-  /** JSON-over-the-wire shape — Map fields arrive as entry arrays; run through `deserializeGameView` before use. */
+  /** JSON-over-the-wire shape — Map fields arrive as entry arrays and events are already server-redacted; run through `deserializeGameView`/`deserializeGameEvents` before use. */
   readonly view: unknown;
-  readonly events: readonly GameEvent[];
+  readonly events: unknown;
   readonly latestSeq: number;
 }
 
@@ -22,8 +23,8 @@ export function MultiplayerGameScreen() {
   const socketRef = useRef<Socket | null>(null);
   const lastSeenSeqRef = useRef<number>(-1);
   const [view, setView] = useState<GameView | null>(null);
-  const [latestEvents, setLatestEvents] = useState<readonly GameEvent[]>([]);
-  const [log, setLog] = useState<GameEvent[]>([]);
+  const [latestEvents, setLatestEvents] = useState<readonly RedactedGameEvent[]>([]);
+  const [log, setLog] = useState<RedactedGameEvent[]>([]);
 
   useEffect(() => {
     if (!accessToken || !gameId) return undefined;
@@ -31,9 +32,10 @@ export function MultiplayerGameScreen() {
     socketRef.current = socket;
 
     socket.on("game:update", (msg: GameUpdateMessage) => {
+      const events = deserializeGameEvents(msg.events);
       setView(deserializeGameView(msg.view));
-      setLatestEvents(msg.events);
-      setLog((prev) => [...prev, ...msg.events]);
+      setLatestEvents(events);
+      setLog((prev) => [...prev, ...events]);
       lastSeenSeqRef.current = msg.latestSeq;
     });
     socket.on("connect", () =>

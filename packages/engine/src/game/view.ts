@@ -5,11 +5,16 @@ import { handTotal } from "./resources.js";
 import { computePublicVictoryPoints } from "./victory.js";
 import type {
   Building,
+  DevCardBoughtEvent,
   DevCardInstance,
+  DiscardedEvent,
+  GameEvent,
   Phase,
   Player,
   PlayerPieceSupply,
+  ProgressCardDrawnEvent,
   ResourceHand,
+  ResourceStolenEvent,
   TradeOffer,
 } from "./types.js";
 import type { GameState } from "./types.js";
@@ -98,4 +103,55 @@ export function viewFor(
     targetVictoryPoints: state.targetVictoryPoints,
     publicVictoryPoints,
   };
+}
+
+/** Same shape as `T`, but `K` is omittable — used to represent "this field was redacted, not merely empty." */
+type Redactable<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export type RedactedGameEvent =
+  | Exclude<GameEvent, DiscardedEvent | ResourceStolenEvent | DevCardBoughtEvent | ProgressCardDrawnEvent>
+  | Redactable<DiscardedEvent, "resources">
+  | Redactable<ResourceStolenEvent, "resource">
+  | Redactable<DevCardBoughtEvent, "card">
+  | Redactable<ProgressCardDrawnEvent, "card">;
+
+/**
+ * `viewFor` redacts a state snapshot; this does the same for the event log
+ * that accompanies every state change (see docs/architecture/server.md §4 —
+ * `game:update` carries both). Four event types carry information that, in
+ * the physical game, only becomes known to specific players: what a player
+ * chose to discard, which resource the robber stole, and which specific
+ * card was bought/drawn from a shuffled deck (as opposed to *playing* a
+ * card, which is already a public action, or production/starting-resource
+ * grants, which are fully derivable from public board state + the roll —
+ * see docs/technical-debt.md for the reasoning this list is scoped to
+ * exactly these four and not e.g. RESOURCES_PRODUCED).
+ *
+ * `viewerId: null` redacts as a spectator — nobody is entitled to any of
+ * these fields.
+ */
+export function redactEventsFor(
+  events: readonly GameEvent[],
+  viewerId: PlayerId | null,
+): RedactedGameEvent[] {
+  return events.map((event) => redactEvent(event, viewerId));
+}
+
+function redactEvent(event: GameEvent, viewerId: PlayerId | null): RedactedGameEvent {
+  switch (event.type) {
+    case "DISCARDED":
+      if (event.playerId === viewerId) return event;
+      return { type: event.type, playerId: event.playerId };
+    case "RESOURCE_STOLEN":
+      if (viewerId === event.thiefId || viewerId === event.victimId) return event;
+      return { type: event.type, thiefId: event.thiefId, victimId: event.victimId };
+    case "DEV_CARD_BOUGHT":
+      if (event.playerId === viewerId) return event;
+      return { type: event.type, playerId: event.playerId };
+    case "PROGRESS_CARD_DRAWN":
+      if (event.playerId === viewerId) return event;
+      return { type: event.type, playerId: event.playerId, deck: event.deck };
+    default:
+      return event;
+  }
 }

@@ -1,5 +1,10 @@
-import { BASE_MODULE, createGame, viewFor } from "@hexhaven/engine";
-import { deserializeGameState, serializeGameState, serializeGameView } from "./serialization.js";
+import { BASE_MODULE, createGame, redactEventsFor, viewFor } from "@hexhaven/engine";
+import {
+  deserializeGameState,
+  serializeGameEvents,
+  serializeGameState,
+  serializeGameView,
+} from "./serialization.js";
 
 describe("serializeGameState / deserializeGameState", () => {
   it("round-trips a freshly created game state exactly", () => {
@@ -75,5 +80,54 @@ describe("serializeGameView", () => {
 
     expect(wired.phase.name).toBe("discard");
     expect(wired.phase.pending).toEqual([["a", 4]]);
+  });
+});
+
+describe("serializeGameEvents", () => {
+  it("turns RESOURCES_PRODUCED.production into a JSON-safe array of entries", () => {
+    const events = [
+      {
+        type: "RESOURCES_PRODUCED" as const,
+        production: new Map([["a", { wood: 1 }], ["b", { ore: 2 }]] as const),
+      },
+    ];
+    const wired = JSON.parse(JSON.stringify(serializeGameEvents(events))) as {
+      type: string;
+      production: [string, unknown][];
+    }[];
+    expect(wired[0]!.production).toEqual([
+      ["a", { wood: 1 }],
+      ["b", { ore: 2 }],
+    ]);
+  });
+
+  it("turns MONOPOLY_PLAYED.seized into a JSON-safe array of entries", () => {
+    const events = [
+      {
+        type: "MONOPOLY_PLAYED" as const,
+        playerId: "a",
+        resource: "ore" as const,
+        seized: new Map([["b", 3]]),
+      },
+    ];
+    const wired = JSON.parse(JSON.stringify(serializeGameEvents(events))) as {
+      seized: [string, number][];
+    }[];
+    expect(wired[0]!.seized).toEqual([["b", 3]]);
+  });
+
+  it("passes every other event through unchanged", () => {
+    const events = [{ type: "TURN_STARTED" as const, playerId: "a" }];
+    expect(serializeGameEvents(events)).toEqual(events);
+  });
+
+  it("composes with redactEventsFor — a redacted DISCARDED event has no resources field to serialize", () => {
+    const events = [{ type: "DISCARDED" as const, playerId: "a", resources: { wood: 4 } }];
+    const redacted = redactEventsFor(events, "b");
+    const wired = JSON.parse(JSON.stringify(serializeGameEvents(redacted))) as Record<
+      string,
+      unknown
+    >[];
+    expect(wired[0]).toEqual({ type: "DISCARDED", playerId: "a" });
   });
 });

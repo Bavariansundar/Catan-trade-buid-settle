@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Bar, Line } from "react-chartjs-2";
 import {
@@ -11,13 +11,12 @@ import {
   PointElement,
   Tooltip,
 } from "chart.js";
-import { applyAction, isRuleError, viewFor, createGame, type GameState } from "@hexhaven/engine";
 import { getGameDetail, type GameDetail } from "../api/history.js";
 import { useAuthStore } from "../store/authStore.js";
 import { HexBoard } from "../board/HexBoard.js";
+import { deserializeGameView } from "../game/deserializeGameView.js";
 import { playerColorMap } from "../board/playerColors.js";
 import { PlayerPanel } from "../game/PlayerPanel.js";
-import { resolveModules } from "../game/resolveModules.js";
 
 ChartJS.register(
   CategoryScale,
@@ -35,27 +34,6 @@ function nameForFactory(participants: readonly { userId: string }[], viewerId: s
     const index = participants.findIndex((p) => p.userId === id);
     return index >= 0 ? `Player ${index + 1}` : `Bot ${id.slice(-1)}`;
   };
-}
-
-/** Folds a fetched game's action log through the engine once, up front, so stepping through the replay is instant. */
-function useReplayStates(detail: GameDetail | null): readonly GameState[] {
-  return useMemo(() => {
-    if (!detail) return [];
-    const modules = resolveModules(detail.game.configJson.moduleIds);
-    let state = createGame(modules, {
-      playerIds: detail.game.configJson.seatPlayerIds,
-      seed: detail.game.seed,
-      targetVictoryPoints: detail.game.configJson.targetVictoryPoints,
-    });
-    const states: GameState[] = [state];
-    for (const action of detail.actions) {
-      const result = applyAction(modules, state, action);
-      if (isRuleError(result)) break;
-      state = result.state;
-      states.push(state);
-    }
-    return states;
-  }, [detail]);
 }
 
 export function GameDetailScreen() {
@@ -76,16 +54,13 @@ export function GameDetailScreen() {
       .catch(() => setError("Could not load this game."));
   }, [accessToken, gameId]);
 
-  const states = useReplayStates(detail);
-
   if (error) return <div className="hh-card">{error}</div>;
   if (!detail || !user) return <div className="hh-card">Loading…</div>;
 
-  const modules = resolveModules(detail.game.configJson.moduleIds);
   const nameFor = nameForFactory(detail.participants, user.id);
   const playerColors = playerColorMap(detail.game.configJson.seatPlayerIds);
-  const currentState = states[step] ?? states[0];
-  const view = currentState ? viewFor(modules, currentState, user.id) : null;
+  const currentStep = detail.replay[step] ?? detail.replay[0];
+  const view = currentStep ? deserializeGameView(currentStep.view) : null;
 
   const stats = detail.stats;
   const diceLabels = Array.from({ length: 11 }, (_, i) => i + 2);
@@ -148,13 +123,13 @@ export function GameDetailScreen() {
                   ◀ Prev
                 </button>
                 <span style={{ fontSize: "0.85rem" }}>
-                  Step {step + 1} / {states.length}
+                  Step {step + 1} / {detail.replay.length}
                 </span>
                 <button
                   type="button"
                   className="hh-button hh-button--secondary"
-                  disabled={step >= states.length - 1}
-                  onClick={() => setStep((s) => Math.min(states.length - 1, s + 1))}
+                  disabled={step >= detail.replay.length - 1}
+                  onClick={() => setStep((s) => Math.min(detail.replay.length - 1, s + 1))}
                 >
                   Next ▶
                 </button>
@@ -162,7 +137,7 @@ export function GameDetailScreen() {
               <input
                 type="range"
                 min={0}
-                max={Math.max(0, states.length - 1)}
+                max={Math.max(0, detail.replay.length - 1)}
                 value={step}
                 onChange={(e) => setStep(Number(e.target.value))}
               />

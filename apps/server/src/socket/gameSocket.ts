@@ -1,14 +1,16 @@
 import {
   isRuleError,
+  redactEventsFor,
   viewFor,
   type Action,
   type GameEvent,
   type GameState,
+  type PlayerId,
   type RuleModule,
 } from "@hexhaven/engine";
 import type { GameRuntimeService } from "../game/gameRuntime.js";
 import type { GameStateCache } from "../game/gameStateCache.js";
-import { serializeGameView } from "../game/serialization.js";
+import { serializeGameEvents, serializeGameView } from "../game/serialization.js";
 import { gameActionSchema, gameWatchSchema } from "./schemas.js";
 import type { AppServer, AppSocket } from "./types.js";
 
@@ -56,10 +58,11 @@ class GameBroadcaster {
     const sockets = await this.io.in(gameRoom(gameId)).fetchSockets();
     for (const socket of sockets) {
       const isPlayer = config.seatPlayerIds.includes(socket.data.userId);
-      const viewerId = isPlayer ? socket.data.userId : SPECTATOR_VIEWER_ID;
+      const playerId: PlayerId | null = isPlayer ? socket.data.userId : null;
+      const viewerId = playerId ?? SPECTATOR_VIEWER_ID;
       socket.emit("game:update", {
         view: serializeGameView(viewFor(modules as RuleModule[], state, viewerId)),
-        events,
+        events: serializeGameEvents(redactEventsFor(events, playerId)),
         latestSeq,
       });
     }
@@ -97,14 +100,15 @@ export function registerGameSocketHandlers(
       socket.data.watchedPlayerGames.add(payload.gameId);
       gameRuntime.onReconnect(payload.gameId, userId);
     }
-    const viewerId = isPlayer ? userId : SPECTATOR_VIEWER_ID;
+    const playerId: PlayerId | null = isPlayer ? userId : null;
+    const viewerId = playerId ?? SPECTATOR_VIEWER_ID;
 
     if (typeof payload.lastSeenSeq === "number") {
       const replay = await gameRuntime.replayEventsSince(payload.gameId, payload.lastSeenSeq);
       if (replay) {
         socket.emit("game:update", {
           view: serializeGameView(viewFor(loaded.modules as RuleModule[], replay.state, viewerId)),
-          events: replay.events,
+          events: serializeGameEvents(redactEventsFor(replay.events, playerId)),
           latestSeq: await gameRuntime.getLatestSeq(payload.gameId),
         });
         return;

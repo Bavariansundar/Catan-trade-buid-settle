@@ -1,7 +1,10 @@
-import type { GameEvent } from "@hexhaven/engine";
+import type { RedactedGameEvent } from "@hexhaven/engine";
 
-/** Human-readable one-line summary of a `GameEvent`, for the action log and toasts. */
-export function formatEvent(event: GameEvent, nameFor: (playerId: string) => string): string {
+/** Human-readable one-line summary of a `RedactedGameEvent`, for the action log and toasts. */
+export function formatEvent(
+  event: RedactedGameEvent,
+  nameFor: (playerId: string) => string,
+): string {
   switch (event.type) {
     case "SETTLEMENT_PLACED":
     case "SETTLEMENT_BUILT":

@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import type {
   Action,
   Edge,
-  GameEvent,
   GameView,
   Hex,
   PlayerId,
+  RedactedGameEvent,
   ResourceHand,
   ResourceType,
   Vertex,
@@ -28,8 +28,8 @@ export interface GameTableProps {
   readonly view: GameView;
   readonly viewerId: PlayerId;
   readonly legalActions: LegalActionsSummary;
-  readonly latestEvents: readonly GameEvent[];
-  readonly log: readonly GameEvent[];
+  readonly latestEvents: readonly RedactedGameEvent[];
+  readonly log: readonly RedactedGameEvent[];
   readonly nameFor: (playerId: string) => string;
   readonly dispatch: (action: Action) => void;
 }

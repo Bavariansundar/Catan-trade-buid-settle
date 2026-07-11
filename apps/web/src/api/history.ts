@@ -1,4 +1,3 @@
-import type { Action } from "@hexhaven/engine";
 import { apiRequest } from "./client.js";
 
 export type GameStatus = "ACTIVE" | "ENDED" | "ABANDONED";
@@ -11,10 +10,15 @@ export interface GameConfigSnapshot {
   readonly botSeats: Readonly<Record<string, string>>;
 }
 
+/**
+ * No `seed` field — the server never sends it (see docs/technical-debt.md
+ * item #1: the seed is what would let a client replay the game itself and
+ * reconstruct every opponent's hidden hand/dev-card contents). Use
+ * `GameDetail.replay` for a pre-redacted, server-computed replay instead.
+ */
 export interface GameRecord {
   readonly id: string;
   readonly lobbyId: string;
-  readonly seed: string;
   readonly configJson: GameConfigSnapshot;
   readonly status: GameStatus;
   readonly winnerId: string | null;
@@ -52,11 +56,17 @@ export interface GameStats {
   readonly winnerId: string | null;
 }
 
+export interface ReplayStep {
+  /** Wire-format `GameView`/`RedactedGameEvent[]` — already redacted server-side for the requesting participant. Run through `deserializeGameView`/`deserializeGameEvents` before use. */
+  readonly view: unknown;
+  readonly events: unknown;
+}
+
 export interface GameDetail {
   readonly game: GameRecord;
   readonly participants: readonly GameParticipantRecord[];
   readonly stats: GameStats;
-  readonly actions: readonly Action[];
+  readonly replay: readonly ReplayStep[];
 }
 
 export interface Page<T> {

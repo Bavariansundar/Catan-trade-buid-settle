@@ -60,7 +60,7 @@ export function createHistoryRouter(historyService: HistoryService, config: AppC
    * @openapi
    * /history/{gameId}:
    *   get:
-   *     summary: Full detail for one game — stats, participants, and the raw action log for client-side replay
+   *     summary: Full detail for one game — stats, participants, and a per-participant redacted replay (view+events at each step, already server-side redacted for the requesting user; no seed or raw action log is ever returned)
    *     security: [{ bearerAuth: [] }]
    *     responses:
    *       200: { description: Game detail }

@@ -1,4 +1,4 @@
-import type { GameState, GameView } from "@hexhaven/engine";
+import type { GameState, GameView, RedactedGameEvent } from "@hexhaven/engine";
 
 /**
  * `GameState` uses `ReadonlyMap`/`ReadonlySet` throughout (buildings, roads,
@@ -102,4 +102,25 @@ export function serializeGameView(view: GameView): Json {
     publicVictoryPoints: mapToEntries(view.publicVictoryPoints),
     phase: serializedPhase,
   };
+}
+
+/**
+ * Two `GameEvent` variants carry a `ReadonlyMap` field — `RESOURCES_PRODUCED.production`
+ * and `MONOPOLY_PLAYED.seized`, both public per-player breakdowns (production
+ * is fully derivable from public board state + the roll; a monopoly seizure
+ * happens face-up in the physical game too — see `redactEventsFor`'s doc
+ * comment for which fields are actually secret). Same array-of-entries
+ * treatment as every other Map field crossing the wire, or these two
+ * silently arrive as `{}` client-side.
+ */
+export function serializeGameEvents(events: readonly RedactedGameEvent[]): Json {
+  return events.map((event) => {
+    if (event.type === "RESOURCES_PRODUCED") {
+      return { ...event, production: mapToEntries(event.production) };
+    }
+    if (event.type === "MONOPOLY_PLAYED") {
+      return { ...event, seized: mapToEntries(event.seized) };
+    }
+    return event;
+  });
 }
