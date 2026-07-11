@@ -56,8 +56,16 @@ export class LobbyService {
     return this.lobbies.listPublicWaiting();
   }
 
+  /**
+   * Direct-by-id joining is only for lobbies discoverable via `listPublicLobbies`
+   * — private lobbies must be joined via `joinByCode`. Reports `LOBBY_NOT_FOUND`
+   * rather than a distinct "forbidden" code so a leaked/guessed private lobby id
+   * doesn't even confirm the lobby exists.
+   */
   async joinById(lobbyId: string, userId: string): Promise<LobbyRecord> {
-    return this.joinLobby(await this.requireLobby(lobbyId), userId);
+    const lobby = await this.requireLobby(lobbyId);
+    if (!lobby.isPublic) throw new LobbyError("LOBBY_NOT_FOUND", `No such lobby ${lobbyId}`);
+    return this.joinLobby(lobby, userId);
   }
 
   async joinByCode(code: string, userId: string): Promise<LobbyRecord> {

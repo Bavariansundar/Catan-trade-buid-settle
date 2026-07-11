@@ -9,6 +9,7 @@ import {
 import type { GameRuntimeService } from "../game/gameRuntime.js";
 import type { GameStateCache } from "../game/gameStateCache.js";
 import { serializeGameView } from "../game/serialization.js";
+import { gameActionSchema, gameWatchSchema } from "./schemas.js";
 import type { AppServer, AppSocket } from "./types.js";
 
 function gameRoom(gameId: string): string {
@@ -76,7 +77,13 @@ export function registerGameSocketHandlers(
   broadcaster ??= new GameBroadcaster(io, cache, gameRuntime);
   const userId = socket.data.userId;
 
-  socket.on("game:watch", async (payload: { gameId: string; lastSeenSeq?: number }) => {
+  socket.on("game:watch", async (rawPayload: unknown) => {
+    const parsed = gameWatchSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("game:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const payload = parsed.data;
     const loaded = await gameRuntime.loadGame(payload.gameId).catch(() => null);
     if (!loaded) {
       socket.emit("game:error", { code: "NOT_FOUND" });
@@ -113,9 +120,17 @@ export function registerGameSocketHandlers(
   socket.on(
     "game:action",
     async (
-      payload: { gameId: string; action: Action },
+      rawPayload: unknown,
       ack?: (response: { ok: true } | { ok: false; code: string; message: string }) => void,
     ) => {
+      const parsed = gameActionSchema.safeParse(rawPayload);
+      if (!parsed.success) {
+        const rejection = { code: "INVALID_PAYLOAD", message: "Malformed action payload" };
+        socket.emit("game:actionRejected", rejection);
+        ack?.({ ok: false, ...rejection });
+        return;
+      }
+      const payload = parsed.data;
       if (!socket.data.watchedPlayerGames.has(payload.gameId)) {
         const rejection = { code: "NOT_A_PLAYER", message: "Spectators cannot act" };
         socket.emit("game:actionRejected", rejection);
@@ -123,7 +138,7 @@ export function registerGameSocketHandlers(
         return;
       }
       // Never trust a client-supplied playerId — this socket only ever acts as itself.
-      const action = { ...payload.action, playerId: userId };
+      const action = { ...payload.action, playerId: userId } as Action;
       const result = await gameRuntime.submitAction(payload.gameId, userId, action);
       if (isRuleError(result)) {
         socket.emit("game:actionRejected", { code: result.code, message: result.message });

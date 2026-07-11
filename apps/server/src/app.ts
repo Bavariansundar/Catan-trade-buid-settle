@@ -23,7 +23,7 @@ export interface AppDependencies {
 
 export function createApp(deps: AppDependencies): Express {
   const app = express();
-  app.use(cors());
+  app.use(cors({ origin: deps.config.corsOrigin }));
   app.use(express.json());
 
   app.get("/health", (_req, res) => {

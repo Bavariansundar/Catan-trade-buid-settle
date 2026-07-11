@@ -11,6 +11,8 @@ export interface AppConfig {
   readonly defaultTurnTimerSeconds: number;
   readonly disconnectGraceSeconds: number;
   readonly redisUrl: string;
+  /** Allowed CORS origins for REST + Socket.IO. `"*"` (the dev-friendly default) allows any origin — set `CORS_ORIGIN` (comma-separated) in production. */
+  readonly corsOrigin: string | string[];
 }
 
 function requireEnv(name: string): string {
@@ -32,5 +34,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     defaultTurnTimerSeconds: 120,
     disconnectGraceSeconds: 30,
     redisUrl: env.REDIS_URL ?? "redis://localhost:6379",
+    corsOrigin: env.CORS_ORIGIN ? env.CORS_ORIGIN.split(",").map((origin) => origin.trim()) : "*",
   };
 }

@@ -17,7 +17,7 @@ export interface SocketDependencies {
 }
 
 export function createSocketServer(httpServer: HttpServer, deps: SocketDependencies): AppServer {
-  const io: AppServer = new Server(httpServer, { cors: { origin: "*" } });
+  const io: AppServer = new Server(httpServer, { cors: { origin: deps.config.corsOrigin } });
   io.use(createSocketAuthMiddleware(deps.config));
 
   io.on("connection", (socket) => {

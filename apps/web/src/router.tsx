@@ -9,6 +9,7 @@ import { LoginScreen } from "./screens/LoginScreen.js";
 import { MultiplayerGameScreen } from "./screens/MultiplayerGameScreen.js";
 import { ProfileScreen } from "./screens/ProfileScreen.js";
 import { RegisterScreen } from "./screens/RegisterScreen.js";
+import { RulesScreen } from "./screens/RulesScreen.js";
 import { SinglePlayerScreen } from "./screens/SinglePlayerScreen.js";
 
 export const router = createBrowserRouter([
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: "history", element: <HistoryScreen /> },
       { path: "history/:gameId", element: <GameDetailScreen /> },
       { path: "profile", element: <ProfileScreen /> },
+      { path: "rules", element: <RulesScreen /> },
     ],
   },
 ]);

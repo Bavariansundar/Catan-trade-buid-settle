@@ -113,14 +113,17 @@ function driveOneStep(): "done" | "acted" | "idle" {
     click(settlementButton);
     return "acted";
   }
-  const roadButton = buttonNamed(/^Build Road$/);
-  if (roadButton && !roadButton.disabled) {
-    click(roadButton);
-    return "acted";
-  }
+  // Check for an already-highlighted edge BEFORE re-toggling Build Road — canBuildRoad
+  // doesn't care whether road-mode is already active, so checking the toggle button
+  // first (as this used to) causes an endless on/off toggle that never reaches an edge.
   const edge = document.querySelector('svg line[stroke="var(--hh-accent)"]');
   if (edge) {
     click(edge);
+    return "acted";
+  }
+  const roadButton = buttonNamed(/^Build Road$/);
+  if (roadButton && !roadButton.disabled) {
+    click(roadButton);
     return "acted";
   }
   const buyDevCard = buttonNamed(/^Buy \(/);

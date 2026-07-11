@@ -11,5 +11,6 @@ describe("web app shell", () => {
       </MemoryRouter>,
     );
     expect(screen.getByText("Hexhaven")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Rules" })).toBeInTheDocument();
   });
 });

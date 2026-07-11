@@ -72,11 +72,11 @@ export function createLobbyRouter(lobbyService: LobbyService, config: AppConfig)
    * @openapi
    * /lobbies/{id}/join:
    *   post:
-   *     summary: Join a public (or already-known) lobby by id
+   *     summary: Join a public lobby by id — private lobbies must use /join-by-code instead
    *     security: [{ bearerAuth: [] }]
    *     responses:
    *       200: { description: Joined }
-   *       404: { description: No such lobby }
+   *       404: { description: No such public lobby (also returned for a private lobby's id, so a leaked/guessed id doesn't confirm it exists) }
    *       409: { description: Lobby full or already started }
    */
   router.post("/:id/join", auth, async (req, res) => {

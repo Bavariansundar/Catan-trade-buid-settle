@@ -41,6 +41,19 @@ export interface GameRepository {
 }
 
 export class PrismaGameRepository implements GameRepository {
+  /**
+   * Caches each game's next `seq` in-process to skip the `findFirst` lookup
+   * `appendAction` used to do before every single insert — found while load
+   * testing 100 concurrent games (see docs/technical-debt.md): that lookup
+   * doubled DB round-trips on the single hottest write path in the app.
+   * Safe because `GameRuntimeService.withLock` already serializes all writes
+   * to a given game within this process — the DB's unique `(gameId, seq)`
+   * constraint remains the defense-in-depth backstop for the (already
+   * documented, pre-existing) case of a second process writing the same
+   * game, same as before this cache existed.
+   */
+  private readonly nextSeqByGameId = new Map<string, number>();
+
   constructor(private readonly prisma: PrismaClient) {}
 
   async create(input: CreateGameInput): Promise<GameRecord> {
@@ -65,15 +78,20 @@ export class PrismaGameRepository implements GameRepository {
   }
 
   async appendAction(gameId: string, playerId: string, action: Action): Promise<GameActionRecord> {
-    const last = await this.prisma.gameAction.findFirst({
-      where: { gameId },
-      orderBy: { seq: "desc" },
-    });
-    const seq = (last?.seq ?? -1) + 1;
-    return this.prisma.gameAction.create({
+    let seq = this.nextSeqByGameId.get(gameId);
+    if (seq === undefined) {
+      const last = await this.prisma.gameAction.findFirst({
+        where: { gameId },
+        orderBy: { seq: "desc" },
+      });
+      seq = (last?.seq ?? -1) + 1;
+    }
+    const record = (await this.prisma.gameAction.create({
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- see the identical note on PrismaGameRepository.create above.
       data: { gameId, seq, playerId, actionJson: action as unknown as object },
-    }) as unknown as GameActionRecord;
+    })) as unknown as GameActionRecord;
+    this.nextSeqByGameId.set(gameId, seq + 1);
+    return record;
   }
 
   async listActions(gameId: string, sinceSeq = -1): Promise<GameActionRecord[]> {

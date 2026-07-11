@@ -27,14 +27,24 @@ describe("LobbyService", () => {
     expect(priv.code).toMatch(/^[A-Z0-9]{6}$/);
   });
 
-  it("joins by id and by code, filling the next free seat", async () => {
+  it("joins a public lobby by id and a private lobby by code, filling the next free seat", async () => {
     const service = buildService();
-    const lobby = await service.createLobby("host-1", { ...BASE_OPTIONS, isPublic: false });
-    const afterJoin = await service.joinByCode(lobby.code!, "player-2");
+
+    const publicLobby = await service.createLobby("host-1", BASE_OPTIONS);
+    const afterJoin = await service.joinById(publicLobby.id, "player-2");
     expect(afterJoin.seats.map((s) => s.userId)).toEqual(["host-1", "player-2"]);
 
-    const afterJoin2 = await service.joinById(lobby.id, "player-3");
-    expect(afterJoin2.seats.map((s) => s.userId)).toEqual(["host-1", "player-2", "player-3"]);
+    const privateLobby = await service.createLobby("host-3", { ...BASE_OPTIONS, isPublic: false });
+    const afterJoin2 = await service.joinByCode(privateLobby.code!, "player-4");
+    expect(afterJoin2.seats.map((s) => s.userId)).toEqual(["host-3", "player-4"]);
+  });
+
+  it("rejects joining a private lobby by id — only its invite code works", async () => {
+    const service = buildService();
+    const lobby = await service.createLobby("host-1", { ...BASE_OPTIONS, isPublic: false });
+    await expect(service.joinById(lobby.id, "player-2")).rejects.toMatchObject({
+      code: "LOBBY_NOT_FOUND",
+    });
   });
 
   it("rejects joining a full lobby (6 seats)", async () => {

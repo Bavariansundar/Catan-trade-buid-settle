@@ -79,8 +79,29 @@ export function sortHexes(hexes: readonly Hex[]): Hex[] {
   return [...hexes].sort((a, b) => a.q - b.q || a.r - b.r);
 }
 
-function joinHexKeys(hexes: readonly Hex[]): string {
-  return hexes.map(hexKey).join("|");
+/**
+ * `vertexAt`/`edgeBetween` are on the hottest path in the engine (called by
+ * every legal-move enumeration and every build validation — see
+ * docs/technical-debt.md's load-test findings) and were previously going
+ * through the generic `sortHexes` (an `Array.prototype.sort` call, with its
+ * per-call overhead, for arrays of 2–3 elements) plus a `.map().join()` to
+ * build the id. These two hand-written fast paths produce byte-identical
+ * ids and hex ordering — just without allocating an intermediate array or
+ * invoking the general sort machinery for what's always exactly 2 or 3
+ * elements.
+ */
+function sortHexPair(a: Hex, b: Hex): [Hex, Hex] {
+  return a.q < b.q || (a.q === b.q && a.r <= b.r) ? [a, b] : [b, a];
+}
+
+function sortHexTriple(a: Hex, b: Hex, c: Hex): [Hex, Hex, Hex] {
+  let x = a;
+  let y = b;
+  let z = c;
+  if (x.q > y.q || (x.q === y.q && x.r > y.r)) [x, y] = [y, x];
+  if (y.q > z.q || (y.q === z.q && y.r > z.r)) [y, z] = [z, y];
+  if (x.q > y.q || (x.q === y.q && x.r > y.r)) [x, y] = [y, x];
+  return [x, y, z];
 }
 
 /**
@@ -90,12 +111,8 @@ function joinHexKeys(hexes: readonly Hex[]): string {
  */
 export function vertexAt(hex: Hex, corner: HexCornerDirection): Vertex {
   const nextDir = ((corner + 1) % 6) as HexEdgeDirection;
-  const [a, b, c] = sortHexes([hex, neighbor(hex, corner), neighbor(hex, nextDir)]) as [
-    Hex,
-    Hex,
-    Hex,
-  ];
-  return { id: joinHexKeys([a, b, c]), hexes: [a, b, c] };
+  const [a, b, c] = sortHexTriple(hex, neighbor(hex, corner), neighbor(hex, nextDir));
+  return { id: `${hexKey(a)}|${hexKey(b)}|${hexKey(c)}`, hexes: [a, b, c] };
 }
 
 /** The edge in direction `direction` from `hex` — see docs/coordinates.md §4. */
@@ -105,8 +122,8 @@ export function edgeAt(hex: Hex, direction: HexEdgeDirection): Edge {
 
 /** The canonical edge shared by two known-adjacent hexes. */
 export function edgeBetween(a: Hex, b: Hex): Edge {
-  const [first, second] = sortHexes([a, b]) as [Hex, Hex];
-  return { id: joinHexKeys([first, second]), hexes: [first, second] };
+  const [first, second] = sortHexPair(a, b);
+  return { id: `${hexKey(first)}|${hexKey(second)}`, hexes: [first, second] };
 }
 
 /** All 6 corners of a hex, as canonical Vertex values. */

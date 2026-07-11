@@ -47,11 +47,14 @@ To scope a command to one package: `pnpm --filter @hexhaven/engine test`.
 ## Running with Docker
 
 ```bash
+cp .env.example .env   # then set JWT_ACCESS_SECRET / JWT_REFRESH_SECRET
 docker compose up --build
 ```
 
 This starts Postgres, Redis, the API server (port 3001), and the web app
-(port 8080, served via Nginx).
+(port 8080, served via Nginx) — see
+[docs/deployment.md](./docs/deployment.md) for the full production
+deployment guide, including TLS.
 
 ## CI
 

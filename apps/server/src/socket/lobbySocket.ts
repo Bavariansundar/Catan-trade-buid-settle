@@ -1,7 +1,27 @@
 import { GameRuntimeService } from "../game/gameRuntime.js";
 import { LobbyError, LobbyService } from "../lobby/lobbyService.js";
-import type { BotDifficulty } from "../domain/types.js";
+import type { LobbySettingsUpdate } from "../lobby/lobbyRepository.js";
+import type { LobbyRecord } from "../domain/types.js";
+import { createEventRateLimiter } from "./rateLimiter.js";
+import {
+  lobbyAddBotSchema,
+  lobbyChatSchema,
+  lobbyLeaveSchema,
+  lobbyRemoveSeatSchema,
+  lobbySetReadySchema,
+  lobbyStartSchema,
+  lobbyUpdateSettingsSchema,
+  lobbyWatchSchema,
+} from "./schemas.js";
 import type { AppServer, AppSocket } from "./types.js";
+
+/** Whether `userId` may see `lobby`'s state — public lobbies are open to anyone, private ones only to seated players (the host is always seated at seat 0). */
+export function canWatch(lobby: LobbyRecord, userId: string): boolean {
+  return lobby.isPublic || lobby.seats.some((s) => s.userId === userId);
+}
+
+/** No legitimate human sends chat messages this fast — unlike `game:action`, chat has no natural pacing to lean on. */
+const isChatAllowed = createEventRateLimiter({ windowMs: 5000, maxEventsPerWindow: 10 });
 
 function lobbyRoom(lobbyId: string): string {
   return `lobby:${lobbyId}`;
@@ -29,69 +49,99 @@ export function registerLobbySocketHandlers(
 ): void {
   const userId = socket.data.userId;
 
-  socket.on("lobby:watch", async (payload: { lobbyId: string }) => {
-    await socket.join(lobbyRoom(payload.lobbyId));
-    const lobby = await lobbyService.getLobby(payload.lobbyId).catch(() => null);
-    if (lobby) socket.emit("lobby:state", lobby);
+  socket.on("lobby:watch", async (rawPayload: unknown) => {
+    const parsed = lobbyWatchSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("lobby:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const lobby = await lobbyService.getLobby(parsed.data.lobbyId).catch(() => null);
+    if (!lobby || !canWatch(lobby, userId)) return;
+    await socket.join(lobbyRoom(parsed.data.lobbyId));
+    socket.emit("lobby:state", lobby);
   });
 
-  socket.on("lobby:leave", async (payload: { lobbyId: string }) => {
-    await lobbyService.leave(payload.lobbyId, userId);
-    await socket.leave(lobbyRoom(payload.lobbyId));
-    await broadcastLobby(io, lobbyService, payload.lobbyId);
+  socket.on("lobby:leave", async (rawPayload: unknown) => {
+    const parsed = lobbyLeaveSchema.safeParse(rawPayload);
+    if (!parsed.success) return;
+    const { lobbyId } = parsed.data;
+    await lobbyService.leave(lobbyId, userId);
+    await socket.leave(lobbyRoom(lobbyId));
+    await broadcastLobby(io, lobbyService, lobbyId);
   });
 
-  socket.on("lobby:setReady", async (payload: { lobbyId: string; isReady: boolean }) => {
-    await lobbyService.setReady(payload.lobbyId, userId, payload.isReady);
-    await broadcastLobby(io, lobbyService, payload.lobbyId);
+  socket.on("lobby:setReady", async (rawPayload: unknown) => {
+    const parsed = lobbySetReadySchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("lobby:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const { lobbyId, isReady } = parsed.data;
+    await lobbyService.setReady(lobbyId, userId, isReady);
+    await broadcastLobby(io, lobbyService, lobbyId);
   });
 
-  socket.on(
-    "lobby:addBot",
-    async (payload: { lobbyId: string; seatIndex: number; difficulty: BotDifficulty }) => {
-      try {
-        await lobbyService.addBot(payload.lobbyId, userId, payload.seatIndex, payload.difficulty);
-        await broadcastLobby(io, lobbyService, payload.lobbyId);
-      } catch (error) {
-        if (error instanceof LobbyError) socket.emit("lobby:error", { code: error.code });
-        else throw error;
-      }
-    },
-  );
-
-  socket.on("lobby:removeSeat", async (payload: { lobbyId: string; seatIndex: number }) => {
+  socket.on("lobby:addBot", async (rawPayload: unknown) => {
+    const parsed = lobbyAddBotSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("lobby:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const { lobbyId, seatIndex, difficulty } = parsed.data;
     try {
-      await lobbyService.removeSeat(payload.lobbyId, userId, payload.seatIndex);
-      await broadcastLobby(io, lobbyService, payload.lobbyId);
+      await lobbyService.addBot(lobbyId, userId, seatIndex, difficulty);
+      await broadcastLobby(io, lobbyService, lobbyId);
     } catch (error) {
       if (error instanceof LobbyError) socket.emit("lobby:error", { code: error.code });
       else throw error;
     }
   });
 
-  socket.on(
-    "lobby:updateSettings",
-    async (payload: {
-      lobbyId: string;
-      targetVictoryPoints?: number;
-      enabledModuleIds?: string[];
-      turnTimerSeconds?: number;
-    }) => {
-      const { lobbyId, ...updates } = payload;
-      try {
-        await lobbyService.updateSettings(lobbyId, userId, updates);
-        await broadcastLobby(io, lobbyService, lobbyId);
-      } catch (error) {
-        if (error instanceof LobbyError) socket.emit("lobby:error", { code: error.code });
-        else throw error;
-      }
-    },
-  );
+  socket.on("lobby:removeSeat", async (rawPayload: unknown) => {
+    const parsed = lobbyRemoveSeatSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("lobby:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const { lobbyId, seatIndex } = parsed.data;
+    try {
+      await lobbyService.removeSeat(lobbyId, userId, seatIndex);
+      await broadcastLobby(io, lobbyService, lobbyId);
+    } catch (error) {
+      if (error instanceof LobbyError) socket.emit("lobby:error", { code: error.code });
+      else throw error;
+    }
+  });
 
-  socket.on("lobby:chat", (payload: { lobbyId: string; message: string }) => {
-    const trimmed = payload.message.trim().slice(0, 500);
+  socket.on("lobby:updateSettings", async (rawPayload: unknown) => {
+    const parsed = lobbyUpdateSettingsSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("lobby:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const { lobbyId, targetVictoryPoints, enabledModuleIds, turnTimerSeconds } = parsed.data;
+    const updates: LobbySettingsUpdate = {
+      ...(targetVictoryPoints !== undefined ? { targetVictoryPoints } : {}),
+      ...(enabledModuleIds !== undefined ? { enabledModuleIds } : {}),
+      ...(turnTimerSeconds !== undefined ? { turnTimerSeconds } : {}),
+    };
+    try {
+      await lobbyService.updateSettings(lobbyId, userId, updates);
+      await broadcastLobby(io, lobbyService, lobbyId);
+    } catch (error) {
+      if (error instanceof LobbyError) socket.emit("lobby:error", { code: error.code });
+      else throw error;
+    }
+  });
+
+  socket.on("lobby:chat", (rawPayload: unknown) => {
+    if (!isChatAllowed(socket.id)) return;
+    const parsed = lobbyChatSchema.safeParse(rawPayload);
+    if (!parsed.success) return;
+    const { lobbyId, message } = parsed.data;
+    const trimmed = message.trim().slice(0, 500);
     if (!trimmed) return;
-    io.to(lobbyRoom(payload.lobbyId)).emit("lobby:chat", {
+    io.to(lobbyRoom(lobbyId)).emit("lobby:chat", {
       userId,
       displayName: socket.data.displayName,
       message: trimmed,
@@ -99,11 +149,17 @@ export function registerLobbySocketHandlers(
     });
   });
 
-  socket.on("lobby:start", async (payload: { lobbyId: string }) => {
+  socket.on("lobby:start", async (rawPayload: unknown) => {
+    const parsed = lobbyStartSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      socket.emit("lobby:error", { code: "INVALID_PAYLOAD" });
+      return;
+    }
+    const { lobbyId } = parsed.data;
     try {
-      const lobby = await lobbyService.start(payload.lobbyId, userId);
+      const lobby = await lobbyService.start(lobbyId, userId);
       const { gameId } = await gameRuntime.startGame(lobby);
-      io.to(lobbyRoom(payload.lobbyId)).emit("lobby:gameStarted", { gameId });
+      io.to(lobbyRoom(lobbyId)).emit("lobby:gameStarted", { gameId });
     } catch (error) {
       if (error instanceof LobbyError) socket.emit("lobby:error", { code: error.code });
       else throw error;

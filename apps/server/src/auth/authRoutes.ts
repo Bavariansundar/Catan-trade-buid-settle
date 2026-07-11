@@ -180,7 +180,7 @@ export function createAuthRouter(authService: AuthService, rateLimiters: AuthRat
    *     responses:
    *       204: { description: Logged out }
    */
-  router.post("/logout", async (req, res) => {
+  router.post("/logout", rateLimiters.refresh, async (req, res) => {
     const parsed = refreshSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "INVALID_BODY", details: parsed.error.flatten() });
