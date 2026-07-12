@@ -13,7 +13,7 @@ import {
   type ApplySuccess,
   type GameState,
   type Vertex,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { approxLegalActions } from "./approxLegalActions.js";
 
 function apply(state: GameState, action: Action): ApplySuccess {

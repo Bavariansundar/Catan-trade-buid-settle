@@ -4,7 +4,7 @@ import {
   type DevCardInstance,
   type DevCardType,
   type ResourceType,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 
 const DEV_CARD_LABEL: Record<DevCardType, string> = {
   knight: "Knight",
@@ -17,19 +17,16 @@ const DEV_CARD_LABEL: Record<DevCardType, string> = {
 export interface DevCardBarProps {
   readonly cards: readonly DevCardInstance[];
   readonly playableTypes: readonly Exclude<DevCardType, "victory_point">[];
-  readonly canBuy: boolean;
-  readonly onBuy: () => void;
   readonly onPlayKnight: () => void;
   readonly onPlayMonopoly: (resource: ResourceType) => void;
   readonly onPlayYearOfPlenty: (a: ResourceType, b: ResourceType) => void;
   readonly onPlayRoadBuilding: () => void;
 }
 
+/** Buying is handled by the floating "+" button in GameTable — this only lists cards already owned. */
 export function DevCardBar({
   cards,
   playableTypes,
-  canBuy,
-  onBuy,
   onPlayKnight,
   onPlayMonopoly,
   onPlayYearOfPlenty,
@@ -43,17 +40,7 @@ export function DevCardBar({
 
   return (
     <div className="hh-card" style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3 style={{ fontSize: "1rem" }}>Development Cards</h3>
-        <button
-          type="button"
-          className="hh-button hh-button--secondary"
-          disabled={!canBuy}
-          onClick={onBuy}
-        >
-          Buy (1 ore, 1 wheat, 1 sheep)
-        </button>
-      </div>
+      <h3>Development Cards</h3>
       {[...counts.entries()].map(([type, count]) => (
         <div
           key={type}

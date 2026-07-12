@@ -12,7 +12,7 @@ import {
   type ResourceType,
   type RuleModule,
   type Vertex,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import {
   canBuyDevCard,
   legalCityVertices,

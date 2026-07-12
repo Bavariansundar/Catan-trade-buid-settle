@@ -5,7 +5,7 @@ import {
   createGame,
   isRuleError,
   type GameState,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { RuleBasedBot } from "./ruleBasedBot.js";
 
 const MODULES = [BASE_MODULE];

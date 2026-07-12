@@ -36,7 +36,7 @@ jobs:
         run: pnpm test
 
       - name: Build server Docker image
-        run: docker build -f apps/server/Dockerfile -t hexhaven-server:ci .
+        run: docker build -f apps/server/Dockerfile -t baychearsbar-server:ci .
 
       - name: Build web Docker image
-        run: docker build -f apps/web/Dockerfile -t hexhaven-web:ci .
+        run: docker build -f apps/web/Dockerfile -t baychearsbar-web:ci .

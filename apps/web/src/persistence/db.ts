@@ -1,8 +1,8 @@
 import { openDB, type IDBPDatabase } from "idb";
-import type { Action } from "@hexhaven/engine";
+import type { Action } from "@baychearsbar/engine";
 import type { SinglePlayerConfig } from "../worker/useEngineWorker.js";
 
-const DB_NAME = "hexhaven";
+const DB_NAME = "baychearsbar";
 const STORE_NAME = "singlePlayerSave";
 /** One save slot for now — single-player is one offline game at a time. */
 const SAVE_KEY = "current";

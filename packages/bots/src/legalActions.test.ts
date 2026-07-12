@@ -9,7 +9,7 @@ import {
   validateBuildSettlement,
   verticesOfEdge,
   type GameState,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { allBoardEdges, allBoardVertices } from "./boardGeometry.js";
 import {
   canBuyDevCard,

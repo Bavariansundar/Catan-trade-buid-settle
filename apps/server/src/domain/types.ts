@@ -1,4 +1,4 @@
-import type { Action } from "@hexhaven/engine";
+import type { Action } from "@baychearsbar/engine";
 
 /**
  * Domain types independent of Prisma's generated shapes — every repository

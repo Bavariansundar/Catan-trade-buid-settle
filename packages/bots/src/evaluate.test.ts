@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BASE_MODULE, verticesOfHex, type GameState, type RuleModule } from "@hexhaven/engine";
+import { BASE_MODULE, verticesOfHex, type GameState, type RuleModule } from "@baychearsbar/engine";
 import { testGameStateForBots } from "./testHelpers.js";
 import { evaluateState } from "./evaluate.js";
 

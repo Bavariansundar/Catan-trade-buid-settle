@@ -1,4 +1,4 @@
-import type { PlayerId } from "@hexhaven/engine";
+import type { PlayerId } from "@baychearsbar/engine";
 import type { AchievementId } from "../domain/types.js";
 import type { GameStats } from "./aggregateGameStats.js";
 

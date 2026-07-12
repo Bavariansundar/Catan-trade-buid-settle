@@ -1,4 +1,4 @@
-import type { PlayerId } from "@hexhaven/engine";
+import type { PlayerId } from "@baychearsbar/engine";
 import { resolveModules } from "../game/moduleResolver.js";
 import type { GameRepository } from "../game/gameRepository.js";
 import type { GameRecord } from "../domain/types.js";

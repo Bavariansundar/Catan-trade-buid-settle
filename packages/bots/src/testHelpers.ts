@@ -1,4 +1,4 @@
-import { BASE_MODULE, createGame, type GameState } from "@hexhaven/engine";
+import { BASE_MODULE, createGame, type GameState } from "@baychearsbar/engine";
 
 const CENTER_HEX = { q: 0, r: 0 };
 

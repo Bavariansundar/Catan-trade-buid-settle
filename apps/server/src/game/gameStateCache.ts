@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { Redis } from "ioredis";
-import type { GameEvent, GameState } from "@hexhaven/engine";
+import type { GameEvent, GameState } from "@baychearsbar/engine";
 import { deserializeGameState, serializeGameState } from "./serialization.js";
 
 export interface GameStateUpdateMessage {

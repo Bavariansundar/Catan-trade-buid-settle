@@ -5,7 +5,7 @@ import {
   resolveActingPlayerId,
   robberMoveCandidates,
   sensibleDiscard,
-} from "@hexhaven/bots";
+} from "@baychearsbar/bots";
 import {
   applyAction,
   createGame,
@@ -14,7 +14,7 @@ import {
   type Action,
   type GameState,
   type PlayerId,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { aggregateGameStats } from "./aggregateGameStats.js";
 
 const MODULES = [BASE_MODULE];

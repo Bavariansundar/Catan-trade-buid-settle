@@ -35,10 +35,10 @@ importers:
 
   apps/server:
     dependencies:
-      '@hexhaven/bots':
+      '@baychearsbar/bots':
         specifier: workspace:^
         version: link:../../packages/bots
-      '@hexhaven/engine':
+      '@baychearsbar/engine':
         specifier: workspace:*
         version: link:../../packages/engine
       '@prisma/client':
@@ -126,10 +126,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@hexhaven/bots':
+      '@baychearsbar/bots':
         specifier: workspace:^
         version: link:../../packages/bots
-      '@hexhaven/engine':
+      '@baychearsbar/engine':
         specifier: workspace:*
         version: link:../../packages/engine
       chart.js:
@@ -190,7 +190,7 @@ importers:
 
   packages/bots:
     dependencies:
-      '@hexhaven/engine':
+      '@baychearsbar/engine':
         specifier: workspace:*
         version: link:../engine
     devDependencies:

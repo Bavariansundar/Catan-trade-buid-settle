@@ -1,12 +1,5 @@
-import { RESOURCE_TYPES, type ResourceHand, type ResourceType } from "@hexhaven/engine";
-
-const RESOURCE_ICON: Record<ResourceType, string> = {
-  wood: "🌲",
-  brick: "🧱",
-  sheep: "🐑",
-  wheat: "🌾",
-  ore: "⛰️",
-};
+import { RESOURCE_TYPES, type ResourceHand, type ResourceType } from "@baychearsbar/engine";
+import { ResourceIcon } from "./ResourceIcon.js";
 
 export interface ResourceHandBarProps {
   readonly hand: ResourceHand;
@@ -24,9 +17,16 @@ export function ResourceHandBar({ hand, selected, onSelect }: ResourceHandBarPro
           className="hh-button hh-button--secondary"
           disabled={!onSelect || hand[r] === 0}
           onClick={() => onSelect?.(r)}
-          style={{ minWidth: 64, padding: "0.4rem 0.5rem" }}
+          style={{
+            minWidth: 64,
+            padding: "0.4rem 0.5rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "0.2rem",
+          }}
         >
-          <div style={{ fontSize: "1.2rem" }}>{RESOURCE_ICON[r]}</div>
+          <ResourceIcon type={r} size={26} />
           <div style={{ fontSize: "0.8rem" }}>
             {r}: {hand[r]}
             {selected?.[r] ? ` (−${selected[r]})` : ""}

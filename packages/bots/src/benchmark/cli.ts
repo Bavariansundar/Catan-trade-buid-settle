@@ -3,7 +3,7 @@ import type { BotSpec } from "./botSpec.js";
 import { botSpecLabel } from "./botSpec.js";
 
 /**
- * Standalone benchmark CLI — run via `pnpm --filter @hexhaven/bots bench`
+ * Standalone benchmark CLI — run via `pnpm --filter @baychearsbar/bots bench`
  * (see package.json) after `pnpm build`, since it needs the compiled
  * worker.js (see runTournament.ts's doc). Not part of `pnpm test`: 500+
  * games per pairing, one of which is MCTS, is minutes of wall-clock time —

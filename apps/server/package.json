@@ -1,5 +1,5 @@
 {
-  "name": "@hexhaven/server",
+  "name": "@baychearsbar/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -18,8 +18,8 @@
     "db:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "@hexhaven/bots": "workspace:^",
-    "@hexhaven/engine": "workspace:*",
+    "@baychearsbar/bots": "workspace:^",
+    "@baychearsbar/engine": "workspace:*",
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",

@@ -78,6 +78,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
-    { name: "hexhaven-auth" },
+    { name: "baychearsbar-auth" },
   ),
 );

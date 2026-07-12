@@ -1,5 +1,5 @@
 {
-  "name": "@hexhaven/web",
+  "name": "@baychearsbar/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@hexhaven/bots": "workspace:^",
-    "@hexhaven/engine": "workspace:*",
+    "@baychearsbar/bots": "workspace:^",
+    "@baychearsbar/engine": "workspace:*",
     "chart.js": "^4.5.1",
     "idb": "^8.0.3",
     "react": "^18.3.1",

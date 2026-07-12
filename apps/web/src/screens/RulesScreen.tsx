@@ -1,3 +1,6 @@
+import { RESOURCE_TYPES } from "@baychearsbar/engine";
+import { ResourceIcon } from "../game/ResourceIcon.js";
+
 const sectionStyle = {
   display: "flex",
   flexDirection: "column",
@@ -28,6 +31,30 @@ export function RulesScreen() {
           and 8) are never adjacent to each other. Nine harbors sit on the coastline — four generic
           3:1 harbors and five resource-specific 2:1 harbors, one per resource.
         </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "1.1rem", marginTop: "0.3rem" }}>
+          {RESOURCE_TYPES.map((r) => (
+            <div
+              key={r}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "0.35rem",
+              }}
+            >
+              <ResourceIcon type={r} size={56} />
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--hh-text-dim)",
+                  textTransform: "capitalize",
+                }}
+              >
+                {r}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="hh-card" style={sectionStyle}>

@@ -1,4 +1,4 @@
-import type { GameState, PlayerId } from "@hexhaven/engine";
+import type { GameState, PlayerId } from "@baychearsbar/engine";
 
 /** Who is expected to act next, across every phase this bot package supports (see types.ts's scope note). */
 export function resolveActingPlayerId(state: GameState): PlayerId {

@@ -8,7 +8,7 @@ import {
   TWIN_ISLES,
   type RuleModule,
   type ScenarioDefinition,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 
 const SEAFARERS_SCENARIOS_BY_ID: Record<string, ScenarioDefinition> = {
   "twin-isles": TWIN_ISLES,

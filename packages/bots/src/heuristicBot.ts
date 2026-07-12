@@ -5,7 +5,7 @@ import {
   type GameState,
   type PlayerId,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { evaluateState } from "./evaluate.js";
 import { enumerateLegalActions } from "./legalActions.js";
 import { RuleBasedBot } from "./ruleBasedBot.js";

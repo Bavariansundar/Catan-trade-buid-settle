@@ -1,4 +1,4 @@
-import type { RedactedGameEvent } from "@hexhaven/engine";
+import type { RedactedGameEvent } from "@baychearsbar/engine";
 
 /**
  * Mirror of `deserializeGameView.ts` for the event log that travels

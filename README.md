@@ -1,4 +1,4 @@
-# Hexhaven
+# BayCheArsBar
 
 An online settlement-and-trading board game — web + mobile-PWA, 2–6 players,
 single-player vs. bots, and expansion modules. See [CLAUDE.md](./CLAUDE.md)
@@ -42,7 +42,7 @@ pnpm typecheck   # tsc --noEmit across the monorepo
 pnpm format      # Prettier write
 ```
 
-To scope a command to one package: `pnpm --filter @hexhaven/engine test`.
+To scope a command to one package: `pnpm --filter @baychearsbar/engine test`.
 
 ## Running with Docker
 

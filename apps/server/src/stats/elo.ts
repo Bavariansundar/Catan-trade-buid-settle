@@ -1,4 +1,4 @@
-import type { PlayerId } from "@hexhaven/engine";
+import type { PlayerId } from "@baychearsbar/engine";
 
 export const DEFAULT_RATING = 1200;
 const K_FACTOR = 32;

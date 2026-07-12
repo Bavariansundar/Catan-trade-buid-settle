@@ -1,4 +1,4 @@
-import { createRng } from "@hexhaven/engine";
+import { createRng } from "@baychearsbar/engine";
 import { HeuristicBot } from "../heuristicBot.js";
 import { MCTSBot } from "../mctsBot.js";
 import { RuleBasedBot } from "../ruleBasedBot.js";

@@ -1,28 +1,47 @@
 :root {
-  --hh-bg: #0f1117;
-  --hh-bg-panel: #171a24;
-  --hh-bg-elevated: #1f2330;
-  --hh-border: #2a2f3d;
-  --hh-text: #e9ecf4;
-  --hh-text-dim: #9aa1b4;
-  --hh-accent: #f2a544;
-  --hh-accent-dim: #7a5a2a;
-  --hh-danger: #e2584f;
-  --hh-success: #5fb87a;
+  /* Warm walnut/espresso base, brass accents — a physical wood-and-felt game
+     table rather than a flat app-dark theme. */
+  --hh-bg: #15100a;
+  --hh-bg-panel: #221910;
+  --hh-bg-panel-hi: #2c2116;
+  --hh-bg-elevated: #382a1c;
+  --hh-border: #4a3824;
+  --hh-border-hi: #6b5636;
+  --hh-text: #f3e8d4;
+  --hh-text-dim: #b7a488;
+  --hh-text-faint: #8a7a63;
 
-  --hh-resource-wood: #3f7a4a;
-  --hh-resource-brick: #b3542f;
-  --hh-resource-sheep: #8bc36a;
-  --hh-resource-wheat: #dfb43a;
-  --hh-resource-ore: #7c8390;
-  --hh-resource-desert: #d8c58a;
-  --hh-resource-sea: #1c3a52;
+  --hh-accent: #d9ab3f;
+  --hh-accent-hi: #f0c968;
+  --hh-accent-dim: #7a5a20;
+  --hh-accent-ink: #241505;
 
-  --hh-radius-sm: 6px;
-  --hh-radius-md: 12px;
-  --hh-radius-lg: 20px;
+  --hh-danger: #c65a45;
+  --hh-danger-dim: #6b3025;
+  --hh-success: #6fa15e;
 
-  --hh-font-display: Georgia, "Times New Roman", serif;
+  --hh-resource-wood: #3f6b3a;
+  --hh-resource-brick: #a84f2c;
+  --hh-resource-sheep: #8fbf5e;
+  --hh-resource-wheat: #d6a233;
+  --hh-resource-ore: #756a5e;
+  --hh-resource-desert: #d3b878;
+  --hh-resource-sea: #163a4a;
+
+  --hh-radius-sm: 8px;
+  --hh-radius-md: 14px;
+  --hh-radius-lg: 22px;
+  --hh-radius-xl: 32px;
+
+  --hh-shadow-sm: 0 2px 6px rgba(10, 6, 2, 0.35);
+  --hh-shadow-md: 0 8px 24px rgba(10, 6, 2, 0.45);
+  --hh-shadow-lg: 0 20px 50px rgba(6, 4, 2, 0.55);
+  --hh-shadow-inset: inset 0 1px 0 rgba(255, 235, 200, 0.06);
+
+  --hh-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --hh-font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman",
+    serif;
   --hh-font-body:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
@@ -41,7 +60,10 @@ body,
 }
 
 body {
-  background: var(--hh-bg);
+  background:
+    radial-gradient(ellipse 1400px 900px at 50% -10%, #2a1e12 0%, transparent 60%),
+    linear-gradient(180deg, #17110a 0%, #120d08 100%);
+  background-attachment: fixed;
   color: var(--hh-text);
   font-family: var(--hh-font-body);
 }
@@ -52,6 +74,23 @@ h3 {
   font-family: var(--hh-font-display);
   font-weight: 700;
   margin: 0;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+h1 {
+  letter-spacing: 0.02em;
+}
+
+h3 {
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: var(--hh-accent);
+}
+
+p {
+  line-height: 1.5;
 }
 
 button {
@@ -63,44 +102,349 @@ a {
   color: var(--hh-accent);
 }
 
+::selection {
+  background: var(--hh-accent-dim);
+  color: var(--hh-text);
+}
+
+/* ---------- Buttons ---------- */
+
 .hh-button {
-  background: var(--hh-accent);
-  color: #1a1305;
-  border: none;
+  position: relative;
+  background: linear-gradient(180deg, var(--hh-accent-hi) 0%, var(--hh-accent) 100%);
+  color: var(--hh-accent-ink);
+  border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: var(--hh-radius-sm);
-  padding: 0.55rem 1.1rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: filter 0.15s ease;
+  padding: 0.6rem 1.2rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  box-shadow:
+    var(--hh-shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.18s var(--hh-ease),
+    box-shadow 0.18s var(--hh-ease),
+    filter 0.18s var(--hh-ease);
 }
 
 .hh-button:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--hh-shadow-md),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.hh-button:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.97);
 }
 
 .hh-button:disabled {
-  opacity: 0.5;
+  opacity: 0.42;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .hh-button--secondary {
-  background: var(--hh-bg-elevated);
+  background: linear-gradient(180deg, var(--hh-bg-elevated) 0%, var(--hh-bg-panel-hi) 100%);
   color: var(--hh-text);
-  border: 1px solid var(--hh-border);
+  border: 1px solid var(--hh-border-hi);
+  box-shadow: var(--hh-shadow-sm), var(--hh-shadow-inset);
 }
 
+.hh-button--secondary:hover:not(:disabled) {
+  border-color: var(--hh-accent-dim);
+  box-shadow: var(--hh-shadow-md), var(--hh-shadow-inset);
+}
+
+/* ---------- Inputs ---------- */
+
 .hh-input {
-  background: var(--hh-bg-elevated);
+  background: var(--hh-bg-panel);
   border: 1px solid var(--hh-border);
   color: var(--hh-text);
   border-radius: var(--hh-radius-sm);
-  padding: 0.5rem 0.7rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition:
+    border-color 0.15s var(--hh-ease),
+    box-shadow 0.15s var(--hh-ease);
+}
+
+.hh-input:focus {
+  outline: none;
+  border-color: var(--hh-accent);
+  box-shadow: 0 0 0 3px rgba(217, 171, 63, 0.18);
+}
+
+/* ---------- Cards / panels ---------- */
+
+.hh-card {
+  position: relative;
+  background: linear-gradient(165deg, var(--hh-bg-panel-hi) 0%, var(--hh-bg-panel) 100%);
+  border: 1px solid var(--hh-border);
+  border-radius: var(--hh-radius-md);
+  padding: 1.1rem;
+  box-shadow: var(--hh-shadow-md), var(--hh-shadow-inset);
+}
+
+.hh-card--hero {
+  border-radius: var(--hh-radius-xl);
+  box-shadow: var(--hh-shadow-lg), var(--hh-shadow-inset);
+  border-color: var(--hh-border-hi);
+}
+
+.hh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--hh-bg-elevated);
+  border: 1px solid var(--hh-border-hi);
+  color: var(--hh-accent-hi);
+}
+
+/* Floating "buy development card" button — anchored over the board's bottom-left corner. */
+.hh-dev-buy-fab-wrap {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  z-index: 5;
+}
+
+.hh-dev-buy-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, var(--hh-accent-hi) 0%, var(--hh-accent) 100%);
+  color: var(--hh-accent-ink);
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    var(--hh-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.18s var(--hh-ease),
+    filter 0.18s var(--hh-ease),
+    box-shadow 0.18s var(--hh-ease);
+}
+
+.hh-dev-buy-fab:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.06);
+  filter: brightness(1.08);
+}
+
+.hh-dev-buy-fab:active:not(:disabled) {
+  transform: translateY(0) scale(1);
+}
+
+.hh-dev-buy-fab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: var(--hh-shadow-sm);
+}
+
+.hh-dev-buy-fab-label {
+  font-size: 0.68rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: var(--hh-bg-panel-hi);
+  border: 1px solid var(--hh-border-hi);
+  color: var(--hh-text-dim);
+  white-space: nowrap;
+}
+
+/* Trade dialog resource picker */
+.hh-trade-section-title {
+  margin-bottom: 0.5rem;
+}
+
+.hh-trade-subheading {
+  font-size: 0.78rem;
+  color: var(--hh-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+
+.hh-trade-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.55rem 0.3rem;
+  border-radius: var(--hh-radius-sm);
+  background: linear-gradient(165deg, var(--hh-bg-elevated) 0%, var(--hh-bg-panel) 100%);
+  border: 1px solid var(--hh-border);
+  transition: border-color 0.15s var(--hh-ease), opacity 0.15s var(--hh-ease);
+}
+
+.hh-trade-card[data-empty] {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+.hh-trade-card-name {
+  font-size: 0.7rem;
+  color: var(--hh-text-dim);
+  text-transform: capitalize;
+}
+
+.hh-trade-card-owned {
+  font-size: 0.65rem;
+  color: var(--hh-accent-hi);
+  font-weight: 600;
+}
+
+.hh-trade-card-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.hh-trade-step-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--hh-border-hi);
+  background: var(--hh-bg-panel-hi);
+  color: var(--hh-text);
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s var(--hh-ease), transform 0.1s var(--hh-ease);
+}
+
+.hh-trade-step-btn:hover:not(:disabled) {
+  background: var(--hh-accent-dim);
+  transform: scale(1.1);
+}
+
+.hh-trade-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.hh-trade-step-value {
+  min-width: 16px;
+  text-align: center;
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
-.hh-card {
-  background: var(--hh-bg-panel);
+.hh-trade-offer-card {
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--hh-radius-sm);
+  background: var(--hh-bg-panel-hi);
   border: 1px solid var(--hh-border);
-  border-radius: var(--hh-radius-md);
-  padding: 1rem;
+}
+
+/* Board pieces (settlements, cities, buildable-vertex dots) pop out on hover
+   so a junction's contents are always easy to confirm at a glance. */
+.hh-board-piece {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.15s var(--hh-ease), filter 0.15s var(--hh-ease);
+}
+
+.hh-board-piece:hover {
+  transform: scale(1.35);
+  filter: brightness(1.25) drop-shadow(0 0 4px rgba(255, 235, 180, 0.7));
+}
+
+.hh-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hh-border-hi), transparent);
+  border: none;
+  margin: 0;
+}
+
+/* ---------- Animation utilities ---------- */
+
+@keyframes hh-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hh-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hh-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes hh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hh-anim-fade-in-up {
+  animation: hh-fade-in-up 0.4s var(--hh-ease) both;
+}
+
+.hh-anim-fade-in {
+  animation: hh-fade-in 0.3s var(--hh-ease) both;
+}
+
+.hh-anim-pop-in {
+  animation: hh-pop-in 0.35s var(--hh-ease) both;
+}
+
+/* Respect reduced-motion preferences across every animation utility above. */
+@media (prefers-reduced-motion: reduce) {
+  .hh-anim-fade-in-up,
+  .hh-anim-fade-in,
+  .hh-anim-pop-in,
+  .hh-button,
+  .hh-button--secondary {
+    animation: none !important;
+    transition: none !important;
+  }
 }

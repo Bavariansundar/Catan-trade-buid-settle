@@ -8,7 +8,7 @@ import type {
   PlayerId,
   ResourceType,
   Vertex,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 
 export type BotDifficulty = "EASY" | "MEDIUM" | "HARD";
 

@@ -9,45 +9,27 @@ within each section.
 
 ## High priority
 
-### 1. `/history/:gameId` lets a participant reconstruct every opponent's hidden hand/dev-card history after the game ends
+### 1. ~~`/history/:gameId` lets a participant reconstruct every opponent's hidden hand/dev-card history after the game ends~~ — Fixed
 
-**What**: `HistoryService.getDetail` (`apps/server/src/stats/historyService.ts`)
-correctly restricts access to actual participants, but then returns the
-**entire raw action log** plus the game's `seed`. Because the client
-replays `createGame` + `applyAction` over that log to power the replay
-viewer (`apps/web/src/screens/GameDetailScreen.tsx`), and because that
-replay is fully deterministic, a technically-inclined participant can
-reconstruct every opponent's exact hand and dev-card contents at every
-point in the game — including resources discarded on a 7 (`DiscardAction.resources`
-records the exact breakdown; live play only ever reveals a count) — via
-the browser's network tab or a custom API client, entirely bypassing the
-UI's own redaction (`viewFor(..., user.id)`, which only governs what's
-_rendered_, not what's in the HTTP response body).
+**Fixed post-Phase-11.** `HistoryService.getDetail` no longer returns the
+`seed` or raw action log. It now replays the game once server-side
+(trusted — it has the seed) and returns a per-participant `replay:
+{view, events}[]`, with each step's view passed through the existing
+`viewFor` redaction and each step's events passed through a new
+`redactEventsFor` (`packages/engine/src/game/view.ts`) that strips
+`DISCARDED.resources`, `RESOURCE_STOLEN.resource`, `DEV_CARD_BOUGHT.card`,
+and `PROGRESS_CARD_DRAWN.card` from anyone not entitled to see them. The
+same root-cause bug — unredacted `GameEvent[]` — was also present on the
+live `game:update` Socket.IO broadcast (not just history); both are fixed
+together via `redactEventsFor`. See `apps/server/src/stats/historyService.ts`,
+`apps/server/src/socket/gameSocket.ts`, and regression coverage in
+`apps/server/src/stats/historyService.test.ts` and the expanded
+`apps/server/src/integration/hiddenInfo.test.ts` (now asserts on
+`events`, not just `view`).
 
-**Why it matters**: this app has persistent ratings and players who face
-the same opponents repeatedly in public matchmaking — post-game full
-transparency isn't obviously fine the way it might be in a one-off casual
-app, since it lets a player study an opponent's habits (when they discard
-what, how they manage hidden dev cards) ahead of a rematch.
-
-**Why not fixed now**: the fix is architectural, not a patch. The
-replay-from-raw-actions design (chosen in Phase 10 specifically to avoid
-the server serializing/transmitting N full states) is fundamentally
-incompatible with hiding anything, since the client needs the _complete_
-deterministic trace to replay at all. A real fix means computing and
-storing (or computing on demand) a per-viewer-redacted state at every
-step server-side — i.e., moving replay computation server-side, the thing
-Phase 10 deliberately avoided for efficiency. That's a real design
-decision, not a bug fix, and deserves its own sign-off rather than being
-silently changed here.
-
-**Possible directions**: (a) redact `DiscardAction.resources` specifically
-in the stored/returned log (the smallest concrete leak) while accepting
-hand-position reconstruction remains possible via production/trade
-replay; (b) move to server-computed per-viewer state snapshots, likely
-cached, for genuine fix; (c) explicitly decide this is acceptable
-post-game behavior (many digital board games do reveal everything after
-the fact) and just document it as intentional instead of a gap.
+`apps/web/src/screens/GameDetailScreen.tsx` no longer replays
+`createGame`/`applyAction` client-side at all — it just indexes the
+server-provided `replay` steps.
 
 ### 2. Horizontal scaling isn't safe yet
 
@@ -61,15 +43,17 @@ client never explicitly hears about. Needs a distributed lock (Redis is
 already in the stack — a natural fit) before running more than one
 replica. See docs/deployment.md §5.
 
-### 3. No hidden-info-leak regression coverage beyond one live-game test
+### 3. Hidden-info-leak regression coverage doesn't reach the expansion modules
 
-`apps/server/src/integration/hiddenInfo.test.ts` (added this phase) proves
-the _live_ `game:update` socket payload never leaks opponent hands — but
-covers only one 3-player base-module game. It doesn't exercise the
+`apps/server/src/integration/hiddenInfo.test.ts` proves the live
+`game:update` socket payload (view + events) never leaks opponent hands or
+secret event fields, and `apps/server/src/stats/historyService.test.ts`
+proves the same for `/history/:gameId`'s replay (see item 1, now fixed) —
+but both only exercise a 3-player base-module game. Neither covers the
 expansion modules (seafarers-style ships/pirate, cities & knights'
-commodities/progress cards) or the `/history` leak documented in item 1
-above (which the test doesn't check at all, since it's a known, unfixed
-gap, not a regression to catch).
+commodities/progress cards), which have their own event types and hidden
+state (e.g. C&K's progress-card hand, seafarers' pirate-steal target)
+that `redactEventsFor`/`viewFor` need to get right too.
 
 ## Medium priority
 

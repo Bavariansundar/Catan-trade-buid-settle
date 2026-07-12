@@ -1,4 +1,4 @@
-# Project: Hexhaven — Online Settlement Trading Game
+# Project: BayCheArsBar — Online Settlement Trading Game
 
 A web + mobile-PWA multiplayer board game with mechanics in the style of classic
 hex-based settlement/trading games. Supports 2–6 players, single-player vs. strong
@@ -6,7 +6,7 @@ AI bots, and three expansion modules.
 
 ## IP Constraints (non-negotiable)
 
-- Use the original working name "Hexhaven" (or the name I provide later). Never use
+- Use the original working name "BayCheArsBar" (or the name I provide later). Never use
   the trademarked name "Catan" in product code, UI text, package names, or assets.
 - All artwork, card text, flavor text, and visual design must be original.
 - Game mechanics (dice production, building costs, trading, etc.) are fine to implement.

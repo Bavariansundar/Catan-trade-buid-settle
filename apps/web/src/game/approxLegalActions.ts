@@ -10,7 +10,7 @@ import {
   type GameView,
   type PlayerId,
   type ResourceType,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { allEdgesOnBoard, allVerticesOnBoard } from "../board/boardVertices.js";
 import type { LegalActionsSummary } from "../worker/protocol.js";
 

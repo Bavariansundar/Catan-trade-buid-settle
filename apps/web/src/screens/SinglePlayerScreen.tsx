@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Action, GameEvent } from "@hexhaven/engine";
+import type { Action } from "@baychearsbar/engine";
 import { GameTable } from "../game/GameTable.js";
 import {
   clearSinglePlayerGame,
@@ -46,8 +46,6 @@ export function SinglePlayerScreen() {
   const [checkedForSave, setCheckedForSave] = useState(false);
 
   const actionsRef = useRef<Action[]>([]);
-  const logRef = useRef<GameEvent[]>([]);
-  const seenEventsRef = useRef<readonly GameEvent[] | null>(null);
 
   useEffect(() => {
     void loadSinglePlayerGame().then((save) => {
@@ -61,11 +59,6 @@ export function SinglePlayerScreen() {
   }, []);
 
   const engine = useEngineWorker(config, handleActionsApplied);
-
-  if (engine.events !== seenEventsRef.current) {
-    logRef.current = [...logRef.current, ...engine.events];
-    seenEventsRef.current = engine.events;
-  }
 
   // Persist after every batch of applied actions; drop the save once the game ends.
   const lastSavedActionCountRef = useRef(0);
@@ -85,8 +78,6 @@ export function SinglePlayerScreen() {
   function startNew() {
     actionsRef.current = [];
     lastSavedActionCountRef.current = 0;
-    logRef.current = [];
-    seenEventsRef.current = null;
     setSavedGame(null);
     setConfig(
       buildConfig({
@@ -100,8 +91,6 @@ export function SinglePlayerScreen() {
   function resume(save: SinglePlayerSave) {
     actionsRef.current = [...save.actions];
     lastSavedActionCountRef.current = save.actions.length;
-    logRef.current = [];
-    seenEventsRef.current = null;
     setConfig({ ...save.config, resumeActions: save.actions });
   }
 
@@ -162,13 +151,11 @@ export function SinglePlayerScreen() {
   }
 
   return (
-    <div style={{ padding: "1rem", height: "calc(100vh - 2rem)" }}>
+    <div style={{ padding: "1rem", height: "100%" }}>
       <GameTable
         view={engine.view}
         viewerId={config.humanPlayerId}
         legalActions={engine.legalActions}
-        latestEvents={engine.events}
-        log={logRef.current}
         nameFor={nameForFactory(config.playerIds)}
         dispatch={engine.dispatch}
       />

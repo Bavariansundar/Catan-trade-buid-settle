@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RESOURCE_TYPES, type ResourceHand, type ResourceType } from "@hexhaven/engine";
+import { RESOURCE_TYPES, type ResourceHand, type ResourceType } from "@baychearsbar/engine";
 import { ResourceHandBar } from "./ResourceHandBar.js";
 
 export interface DiscardPickerProps {

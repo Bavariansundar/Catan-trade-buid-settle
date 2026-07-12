@@ -8,13 +8,20 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Hexhaven",
-        short_name: "Hexhaven",
+        name: "BayCheArsBar",
+        short_name: "BayCheArsBar",
         start_url: "/",
         display: "standalone",
-        background_color: "#0f172a",
-        theme_color: "#0f172a",
-        icons: [],
+        background_color: "#15100a",
+        theme_color: "#15100a",
+        icons: [
+          {
+            src: "/favicon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+        ],
       },
     }),
   ],

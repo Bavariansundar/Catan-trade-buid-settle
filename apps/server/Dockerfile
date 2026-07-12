@@ -14,7 +14,7 @@ COPY tsconfig.base.json turbo.json ./
 COPY packages/engine packages/engine
 COPY packages/bots packages/bots
 COPY apps/server apps/server
-RUN pnpm exec turbo run build --filter=...@hexhaven/server
+RUN pnpm exec turbo run build --filter=...@baychearsbar/server
 
 FROM node:20-slim AS runtime
 WORKDIR /repo
@@ -27,7 +27,7 @@ COPY --from=build /repo/packages/bots/package.json packages/bots/package.json
 COPY --from=build /repo/packages/bots/dist packages/bots/dist
 COPY --from=build /repo/apps/server/package.json apps/server/package.json
 COPY --from=build /repo/apps/server/dist apps/server/dist
-RUN pnpm install --prod --frozen-lockfile --filter=...@hexhaven/server
+RUN pnpm install --prod --frozen-lockfile --filter=...@baychearsbar/server
 
 # Runs as an unprivileged user — the base image's built-in "node" account, not root.
 USER node

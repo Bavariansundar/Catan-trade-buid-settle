@@ -6,7 +6,7 @@ import {
   createRng,
   isRuleError,
   type GameState,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { MCTSBot } from "./mctsBot.js";
 import { resolveActingPlayerId } from "./turnHelpers.js";
 import type { Bot } from "./types.js";

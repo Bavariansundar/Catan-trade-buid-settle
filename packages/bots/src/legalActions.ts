@@ -25,7 +25,7 @@ import {
   type ResourceType,
   type RuleModule,
   type Vertex,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { allBoardEdges, allBoardVertices } from "./boardGeometry.js";
 
 /**

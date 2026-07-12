@@ -10,7 +10,7 @@ import {
   type GameState,
   type PlayerId,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import {
   canBuyDevCard,
   HeuristicBot,
@@ -24,7 +24,7 @@ import {
   robberMoveCandidates,
   RuleBasedBot,
   type Bot,
-} from "@hexhaven/bots";
+} from "@baychearsbar/bots";
 import type {
   BotDifficulty,
   EngineWorkerRequest,

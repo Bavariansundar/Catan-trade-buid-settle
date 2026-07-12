@@ -5,7 +5,7 @@ import {
   createGame,
   isRuleError,
   type GameState,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { HeuristicBot } from "./heuristicBot.js";
 import { RuleBasedBot } from "./ruleBasedBot.js";
 import type { Bot } from "./types.js";

@@ -1,4 +1,4 @@
-import type { GameState, GameView, RedactedGameEvent } from "@hexhaven/engine";
+import type { GameState, GameView, RedactedGameEvent } from "@baychearsbar/engine";
 
 /**
  * `GameState` uses `ReadonlyMap`/`ReadonlySet` throughout (buildings, roads,

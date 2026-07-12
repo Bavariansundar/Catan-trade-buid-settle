@@ -1,4 +1,4 @@
-import type { GameView } from "@hexhaven/engine";
+import type { GameView } from "@baychearsbar/engine";
 
 /**
  * Reconstructs the Map fields Socket.IO's JSON encoding flattens on the wire

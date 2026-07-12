@@ -7,7 +7,7 @@ import {
   type Action,
   type PlayerId,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { resolveModules } from "../game/moduleResolver.js";
 import { serializeGameEvents, serializeGameView } from "../game/serialization.js";
 import type { GameRepository } from "../game/gameRepository.js";

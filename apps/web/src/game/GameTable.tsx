@@ -5,44 +5,31 @@ import type {
   GameView,
   Hex,
   PlayerId,
-  RedactedGameEvent,
   ResourceHand,
   ResourceType,
   Vertex,
-} from "@hexhaven/engine";
-import { hexEquals } from "@hexhaven/engine";
+} from "@baychearsbar/engine";
+import { hexEquals } from "@baychearsbar/engine";
 import type { LegalActionsSummary } from "../worker/protocol.js";
 import { HexBoard } from "../board/HexBoard.js";
 import { playerColorMap } from "../board/playerColors.js";
 import { ActionBar, type BuildMode } from "./ActionBar.js";
-import { ActionLog } from "./ActionLog.js";
 import { DevCardBar } from "./DevCardBar.js";
 import { DiceDisplay } from "./DiceDisplay.js";
 import { DiscardPicker } from "./DiscardPicker.js";
 import { PlayerPanel } from "./PlayerPanel.js";
 import { ResourceHandBar } from "./ResourceHandBar.js";
-import { Toasts } from "./Toasts.js";
 import { TradeDialog } from "./TradeDialog.js";
 
 export interface GameTableProps {
   readonly view: GameView;
   readonly viewerId: PlayerId;
   readonly legalActions: LegalActionsSummary;
-  readonly latestEvents: readonly RedactedGameEvent[];
-  readonly log: readonly RedactedGameEvent[];
   readonly nameFor: (playerId: string) => string;
   readonly dispatch: (action: Action) => void;
 }
 
-export function GameTable({
-  view,
-  viewerId,
-  legalActions,
-  latestEvents,
-  log,
-  nameFor,
-  dispatch,
-}: GameTableProps) {
+export function GameTable({ view, viewerId, legalActions, nameFor, dispatch }: GameTableProps) {
   const playerColors = useMemo(() => playerColorMap(view.players.map((p) => p.id)), [view.players]);
   const [buildMode, setBuildMode] = useState<BuildMode>(null);
   const [tradeOpen, setTradeOpen] = useState(false);
@@ -155,55 +142,79 @@ export function GameTable({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", height: "100%" }}>
+      <PlayerPanel view={view} playerColors={playerColors} nameFor={nameFor} />
+
       <div
+        className="hh-card"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "0.5rem",
+          padding: "0.5rem 1rem",
         }}
       >
-        <div style={{ fontSize: "0.9rem", color: "var(--hh-text-dim)" }}>
-          Turn {view.turnNumber} · Target {view.targetVictoryPoints} VP
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <span className="hh-badge">Turn {view.turnNumber}</span>
+          <span style={{ fontSize: "0.85rem", color: "var(--hh-text-dim)" }}>
+            Target {view.targetVictoryPoints} VP
+          </span>
         </div>
         <DiceDisplay roll={view.diceRoll} />
       </div>
 
-      <div style={{ display: "flex", gap: "1rem", flex: 1, minHeight: 0, flexWrap: "wrap" }}>
-        <div
-          style={{
-            flex: "2 1 480px",
-            minHeight: 360,
-            background: "var(--hh-bg-panel)",
-            borderRadius: "var(--hh-radius-md)",
-          }}
-        >
-          <HexBoard
-            view={view}
-            playerColors={playerColors}
-            legalVertexIds={legalVertexIds}
-            legalEdgeIds={legalEdgeIds}
-            onVertexClick={handleVertexClick}
-            onEdgeClick={handleEdgeClick}
-            onHexClick={handleHexClick}
-            robberSelectable={robberActive}
-          />
-        </div>
+      <div
+        style={{
+          position: "relative",
+          flex: "1 1 auto",
+          minHeight: 260,
+          borderRadius: "var(--hh-radius-lg)",
+          border: "1px solid var(--hh-border)",
+          boxShadow: "var(--hh-shadow-lg)",
+          overflow: "hidden",
+          padding: "0.75rem",
+        }}
+      >
+        <HexBoard
+          view={view}
+          playerColors={playerColors}
+          legalVertexIds={legalVertexIds}
+          legalEdgeIds={legalEdgeIds}
+          onVertexClick={handleVertexClick}
+          onEdgeClick={handleEdgeClick}
+          onHexClick={handleHexClick}
+          robberSelectable={robberActive}
+        />
 
-        <div
-          style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "0.75rem" }}
-        >
-          <PlayerPanel view={view} playerColors={playerColors} nameFor={nameFor} />
-          <ActionLog log={log} nameFor={nameFor} />
-        </div>
+        {view.phase.name === "main" && me?.hand && (
+          <div className="hh-dev-buy-fab-wrap">
+            <button
+              type="button"
+              className="hh-dev-buy-fab"
+              disabled={!legalActions.canBuyDevCard}
+              onClick={() => dispatch({ type: "BUY_DEV_CARD", playerId: viewerId })}
+              title="Buy development card — 1 ore, 1 wheat, 1 sheep"
+            >
+              +
+            </button>
+            <span className="hh-dev-buy-fab-label">⛰️ 🌾 🐑</span>
+          </div>
+        )}
       </div>
 
       {me?.hand && (
         <div
           className="hh-card"
-          style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.85rem",
+            flexShrink: 1,
+            maxHeight: "clamp(170px, 26vh, 260px)",
+            overflowY: "auto",
+          }}
         >
           <ResourceHandBar hand={me.hand} />
           <ActionBar
@@ -218,12 +229,10 @@ export function GameTable({
             onSetBuildMode={setBuildMode}
             onOpenTrade={() => setTradeOpen(true)}
           />
-          {view.phase.name === "main" && me.devCards && (
+          {view.phase.name === "main" && me.devCards && me.devCards.length > 0 && (
             <DevCardBar
               cards={me.devCards}
               playableTypes={legalActions.playableDevCardTypes}
-              canBuy={legalActions.canBuyDevCard}
-              onBuy={() => dispatch({ type: "BUY_DEV_CARD", playerId: viewerId })}
               onPlayKnight={() => setPlayingKnight(true)}
               onPlayMonopoly={(resource: ResourceType) =>
                 dispatch({ type: "PLAY_DEV_CARD", card: "monopoly", playerId: viewerId, resource })
@@ -281,23 +290,24 @@ export function GameTable({
         </div>
       )}
 
-      {tradeOpen && (
+      {tradeOpen && me?.hand && (
         <TradeDialog
           view={view}
           viewerId={viewerId}
+          myHand={me.hand}
           maritimeTrades={legalActions.maritimeTrades}
           nameFor={nameFor}
           onClose={() => setTradeOpen(false)}
           onMaritimeTrade={(give, get) =>
             dispatch({ type: "MARITIME_TRADE", playerId: viewerId, give, get })
           }
-          onProposeTrade={(offering, requesting) =>
+          onProposeTrade={(offering, requesting, targetPlayerIds) =>
             dispatch({
               type: "PROPOSE_TRADE",
               playerId: viewerId,
               offering,
               requesting,
-              targetPlayerIds: null,
+              targetPlayerIds: [...targetPlayerIds],
             })
           }
           onAcceptTrade={(tradeId) =>
@@ -311,8 +321,6 @@ export function GameTable({
           }
         />
       )}
-
-      <Toasts latestEvents={latestEvents} nameFor={nameFor} />
     </div>
   );
 }

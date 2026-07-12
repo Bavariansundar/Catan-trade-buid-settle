@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: hexhaven
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hexhaven}
-      POSTGRES_DB: hexhaven
+      POSTGRES_USER: baychearsbar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-baychearsbar}
+      POSTGRES_DB: baychearsbar
     ports:
       # Bound to the host loopback only — reachable from a locally-run `pnpm
       # dev` server (see README's "Running with Docker"), not from the
@@ -14,7 +14,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hexhaven"]
+      test: ["CMD-SHELL", "pg_isready -U baychearsbar"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -38,7 +38,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://hexhaven:${POSTGRES_PASSWORD:-hexhaven}@postgres:5432/hexhaven
+      DATABASE_URL: postgresql://baychearsbar:${POSTGRES_PASSWORD:-baychearsbar}@postgres:5432/baychearsbar
       REDIS_URL: redis://redis:6379
       # No dev-convenience default for these two — see docs/deployment.md.
       # `${VAR:?message}` makes `docker compose up` fail immediately with a

@@ -1,4 +1,4 @@
-import { applyAction, BASE_MODULE, createGame, isRuleError } from "@hexhaven/engine";
+import { applyAction, BASE_MODULE, createGame, isRuleError } from "@baychearsbar/engine";
 import { resolveActingPlayerId } from "../turnHelpers.js";
 import { buildBot, type BotSpec } from "./botSpec.js";
 

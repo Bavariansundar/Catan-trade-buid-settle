@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { resolveActingPlayerId, type Bot } from "@hexhaven/bots";
+import { resolveActingPlayerId, type Bot } from "@baychearsbar/bots";
 import {
   applyAction,
   createGame,
@@ -11,7 +11,7 @@ import {
   type GameState,
   type RuleError,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import type { AppConfig } from "../config.js";
 import type { BotDifficulty, GameConfigSnapshot, LobbyRecord } from "../domain/types.js";
 import type { MatchRecorder } from "../stats/matchRecorder.js";

@@ -1,5 +1,5 @@
 {
-  "name": "@hexhaven/bots",
+  "name": "@baychearsbar/bots",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "bench": "node dist/benchmark/cli.js"
   },
   "dependencies": {
-    "@hexhaven/engine": "workspace:*"
+    "@baychearsbar/engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -1,4 +1,4 @@
-# Claude Code Prompt Sequence — Hexhaven
+# Claude Code Prompt Sequence — BayCheArsBar
 
 Run these one at a time, in order. Start each in a fresh session (Claude Code
 reads CLAUDE.md automatically). Don't start a phase until the previous one's

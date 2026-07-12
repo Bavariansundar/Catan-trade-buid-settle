@@ -1,4 +1,4 @@
-import { edgesOfHex, verticesOfHex, type Board, type Edge, type Vertex } from "@hexhaven/engine";
+import { edgesOfHex, verticesOfHex, type Board, type Edge, type Vertex } from "@baychearsbar/engine";
 
 /**
  * Every distinct vertex/edge touching the board's tiles, derived purely from

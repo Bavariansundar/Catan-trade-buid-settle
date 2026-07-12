@@ -1,4 +1,4 @@
-import type { Action, GameState, PlayerId, RuleModule } from "@hexhaven/engine";
+import type { Action, GameState, PlayerId, RuleModule } from "@baychearsbar/engine";
 
 /**
  * A bot decides its next action from the true `GameState` (this package runs

@@ -7,7 +7,7 @@ import {
   type PlayerId,
   type RuleModule,
   type TerrainType,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { legalSettlementVertices } from "./legalActions.js";
 
 /** Standard pip weight for a dice number: how often it rolls per 36 two-die outcomes. */

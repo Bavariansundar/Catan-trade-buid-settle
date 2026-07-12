@@ -11,7 +11,7 @@ import {
   type PlayerId,
   type ResourceHand,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 
 export interface VpSnapshot {
   readonly turnNumber: number;

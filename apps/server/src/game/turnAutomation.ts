@@ -1,5 +1,5 @@
-import { HeuristicBot, MCTSBot, RuleBasedBot, sensibleDiscard, type Bot } from "@hexhaven/bots";
-import type { Action, GameState, PlayerId, RuleModule } from "@hexhaven/engine";
+import { HeuristicBot, MCTSBot, RuleBasedBot, sensibleDiscard, type Bot } from "@baychearsbar/bots";
+import type { Action, GameState, PlayerId, RuleModule } from "@baychearsbar/engine";
 import type { BotDifficulty } from "../domain/types.js";
 
 export function createBotForDifficulty(difficulty: BotDifficulty): Bot {

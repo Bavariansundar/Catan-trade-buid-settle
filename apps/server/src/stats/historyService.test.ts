@@ -1,5 +1,5 @@
-import { RuleBasedBot, resolveActingPlayerId } from "@hexhaven/bots";
-import { applyAction, createGame, isRuleError, BASE_MODULE, type Action } from "@hexhaven/engine";
+import { RuleBasedBot, resolveActingPlayerId } from "@baychearsbar/bots";
+import { applyAction, createGame, isRuleError, BASE_MODULE, type Action } from "@baychearsbar/engine";
 import { InMemoryGameRepository } from "../game/gameRepository.js";
 import { HistoryError, HistoryService } from "./historyService.js";
 

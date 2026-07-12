@@ -1,4 +1,4 @@
-import { BASE_MODULE, createGame, redactEventsFor, viewFor } from "@hexhaven/engine";
+import { BASE_MODULE, createGame, redactEventsFor, viewFor } from "@baychearsbar/engine";
 import {
   deserializeGameState,
   serializeGameEvents,

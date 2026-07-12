@@ -11,7 +11,7 @@
  * Run with: npx tsx src/loadtest/runLoadTest.ts [gameCount] [playersPerGame]
  */
 import { randomUUID } from "node:crypto";
-import { RuleBasedBot, resolveActingPlayerId } from "@hexhaven/bots";
+import { RuleBasedBot, resolveActingPlayerId } from "@baychearsbar/bots";
 import type { LobbyRecord, LobbySeatRecord } from "../domain/types.js";
 import { loadConfig } from "../config.js";
 import { InMemoryGameRepository } from "../game/gameRepository.js";

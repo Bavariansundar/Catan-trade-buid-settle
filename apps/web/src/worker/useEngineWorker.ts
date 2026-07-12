@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Action, GameEvent, GameView, PlayerId } from "@hexhaven/engine";
+import type { Action, GameEvent, GameView, PlayerId } from "@baychearsbar/engine";
 import type {
   ActionRejectedResponse,
   BotDifficulty,

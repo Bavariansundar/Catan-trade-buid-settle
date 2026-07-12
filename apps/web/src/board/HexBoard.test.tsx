@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { BASE_MODULE, createGame, verticesOfHex, viewFor } from "@hexhaven/engine";
+import { BASE_MODULE, createGame, verticesOfHex, viewFor } from "@baychearsbar/engine";
 import { describe, expect, it, vi } from "vitest";
 import { HexBoard } from "./HexBoard.js";
 

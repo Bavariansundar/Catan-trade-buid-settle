@@ -20,14 +20,14 @@ COPY apps/web apps/web
 # not the same thing). Fine for a single-host `docker compose up`, where
 # the browser reaches both the web app and API via localhost. For a real
 # remote deployment, set this to the API's real public origin, e.g.
-# --build-arg VITE_API_URL=https://api.hexhaven.example.com — see
+# --build-arg VITE_API_URL=https://api.baychearsbar.example.com — see
 # docs/deployment.md, which also covers why the web app and API are
 # deliberately two separate origins (the web app's own /history and
 # /profile client routes would otherwise collide with the API's
 # identically-named endpoints under one reverse-proxied origin).
 ARG VITE_API_URL="http://localhost:3001"
 ENV VITE_API_URL=$VITE_API_URL
-RUN pnpm exec turbo run build --filter=...@hexhaven/web
+RUN pnpm exec turbo run build --filter=...@baychearsbar/web
 
 FROM nginx:1.27-alpine AS runtime
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html

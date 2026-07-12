@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
-import type { Action } from "@hexhaven/engine";
+import type { Action } from "@baychearsbar/engine";
 import type {
   GameActionRecord,
   GameConfigSnapshot,

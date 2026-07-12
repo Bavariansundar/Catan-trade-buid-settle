@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
-import { legalRoadEdges, legalSettlementVertices } from "@hexhaven/bots";
-import { isRuleError } from "@hexhaven/engine";
+import { legalRoadEdges, legalSettlementVertices } from "@baychearsbar/bots";
+import { isRuleError } from "@baychearsbar/engine";
 import { loadConfig } from "../config.js";
 import type { LobbyRecord } from "../domain/types.js";
 import { InMemoryGameRepository } from "./gameRepository.js";

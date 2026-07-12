@@ -8,7 +8,7 @@ end of this doc.
 
 ```
                      ┌──────────────────────────────┐
-   browser  ──TLS──▶ │  hexhaven.example.com          │
+   browser  ──TLS──▶ │  baychearsbar.example.com          │
                      │  (Nginx/Caddy → web container) │
                      └────────────────┬────────────────┘
                                       │ :8080
@@ -18,7 +18,7 @@ end of this doc.
                      └───────────────────────────────────┘
 
                      ┌──────────────────────────────┐
-   browser  ──TLS──▶ │  api.hexhaven.example.com       │
+   browser  ──TLS──▶ │  api.baychearsbar.example.com       │
                      │  (Nginx/Caddy → server container)│
                      └────────────────┬────────────────┘
                                       │ :3001
@@ -40,7 +40,7 @@ guide and it doesn't work: the web app's own client-side routes
 `/history` and `/profile` (React Router, see `apps/web/src/router.tsx`)
 are identically named to the API's `/history` and `/profile` REST
 endpoints. Routing both through one origin means a browser navigating
-directly to (or refreshing) `https://hexhaven.example.com/history` would
+directly to (or refreshing) `https://baychearsbar.example.com/history` would
 hit whichever side owns that path at the reverse proxy — either it
 correctly serves the SPA shell and the API becomes unreachable at that
 path, or it hits the API's JSON endpoint instead of the SPA, breaking
@@ -61,9 +61,9 @@ reads `.env` from the same directory as `docker-compose.yml` automatically.
 | -------------------- | -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `JWT_ACCESS_SECRET`  | **yes**  | none                    | `docker compose up` fails fast with a clear error if unset. Rotating it logs out every access token.                                                                                                         |
 | `JWT_REFRESH_SECRET` | **yes**  | none                    | Same as above, for refresh tokens.                                                                                                                                                                           |
-| `POSTGRES_PASSWORD`  | no       | `hexhaven`              | Change for any deployment reachable outside your own machine.                                                                                                                                                |
-| `CORS_ORIGIN`        | no       | `*`                     | Comma-separated allowed origin(s) for the API — set to the _web app's_ origin (e.g. `https://hexhaven.example.com`) in production.                                                                           |
-| `VITE_API_URL`       | no       | `http://localhost:3001` | The API's public origin as the browser will reach it — set to the API's real origin (e.g. `https://api.hexhaven.example.com`) for any remote deployment. Baked in at build time (Vite), not read at runtime. |
+| `POSTGRES_PASSWORD`  | no       | `baychearsbar`              | Change for any deployment reachable outside your own machine.                                                                                                                                                |
+| `CORS_ORIGIN`        | no       | `*`                     | Comma-separated allowed origin(s) for the API — set to the _web app's_ origin (e.g. `https://baychearsbar.example.com`) in production.                                                                           |
+| `VITE_API_URL`       | no       | `http://localhost:3001` | The API's public origin as the browser will reach it — set to the API's real origin (e.g. `https://api.baychearsbar.example.com`) for any remote deployment. Baked in at build time (Vite), not read at runtime. |
 
 `apps/server/.env.example` is a separate file for the "run `apps/server`
 directly on the host, Postgres/Redis via Docker" workflow — it documents
@@ -109,24 +109,24 @@ instead, one per public origin (§1). Two common options:
 
 ```
 # Caddyfile
-hexhaven.example.com {
+baychearsbar.example.com {
     reverse_proxy localhost:8080
 }
-api.hexhaven.example.com {
+api.baychearsbar.example.com {
     reverse_proxy localhost:3001
 }
 ```
 
 **Option B — host Nginx + Certbot** (repeat this block per origin, once for
-`hexhaven.example.com` → `localhost:8080`, once for
-`api.hexhaven.example.com` → `localhost:3001`):
+`baychearsbar.example.com` → `localhost:8080`, once for
+`api.baychearsbar.example.com` → `localhost:3001`):
 
 ```nginx
 server {
     listen 443 ssl;
-    server_name api.hexhaven.example.com;
-    ssl_certificate     /etc/letsencrypt/live/api.hexhaven.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.hexhaven.example.com/privkey.pem;
+    server_name api.baychearsbar.example.com;
+    ssl_certificate     /etc/letsencrypt/live/api.baychearsbar.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.baychearsbar.example.com/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:3001;
@@ -139,20 +139,20 @@ server {
 }
 server {
     listen 80;
-    server_name api.hexhaven.example.com;
+    server_name api.baychearsbar.example.com;
     location / { return 301 https://$host$request_uri; }
 }
 ```
 
 ```bash
-sudo certbot --nginx -d hexhaven.example.com -d api.hexhaven.example.com
+sudo certbot --nginx -d baychearsbar.example.com -d api.baychearsbar.example.com
 ```
 
 Once both origins have real domains, set (in `.env`):
 
 ```
-VITE_API_URL=https://api.hexhaven.example.com
-CORS_ORIGIN=https://hexhaven.example.com
+VITE_API_URL=https://api.baychearsbar.example.com
+CORS_ORIGIN=https://baychearsbar.example.com
 ```
 
 ## 5. Known scaling limit
@@ -178,7 +178,7 @@ in this doc was verified by direct inspection instead:
 
 - `apps/server/Dockerfile` and `apps/web/Dockerfile` were both missing a
   `COPY packages/bots` step despite `apps/server` and `apps/web` both
-  depending on `@hexhaven/bots` at runtime/build-time respectively — fixed
+  depending on `@baychearsbar/bots` at runtime/build-time respectively — fixed
   in this phase (confirmed via `grep` that both actually import from it,
   not just declare it as an unused dependency; `apps/server/src/game/
 gameRuntime.ts` and `turnAutomation.ts` import it unconditionally, so

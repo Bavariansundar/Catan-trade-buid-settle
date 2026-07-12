@@ -11,7 +11,7 @@ import {
   type PlayerId,
   type Rng,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import { evaluateState } from "./evaluate.js";
 import { HeuristicBot } from "./heuristicBot.js";
 import { enumerateLegalActions } from "./legalActions.js";

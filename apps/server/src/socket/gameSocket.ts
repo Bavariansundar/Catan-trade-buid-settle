@@ -7,7 +7,7 @@ import {
   type GameState,
   type PlayerId,
   type RuleModule,
-} from "@hexhaven/engine";
+} from "@baychearsbar/engine";
 import type { GameRuntimeService } from "../game/gameRuntime.js";
 import type { GameStateCache } from "../game/gameStateCache.js";
 import { serializeGameEvents, serializeGameView } from "../game/serialization.js";

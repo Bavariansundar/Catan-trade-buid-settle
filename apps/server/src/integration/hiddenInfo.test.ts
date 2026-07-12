@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import request from "supertest";
 import { io as ioClient, type Socket as ClientSocket } from "socket.io-client";
-import { RuleBasedBot, resolveActingPlayerId } from "@hexhaven/bots";
+import { RuleBasedBot, resolveActingPlayerId } from "@baychearsbar/bots";
 import { createApp } from "../app.js";
 import { AuthService } from "../auth/authService.js";
 import { InMemoryRefreshTokenRepository } from "../auth/refreshTokenRepository.js";

@@ -10,7 +10,7 @@ describe("web app shell", () => {
         <App />
       </MemoryRouter>,
     );
-    expect(screen.getByText("Hexhaven")).toBeInTheDocument();
+    expect(screen.getByText("BayCheArsBar")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Rules" })).toBeInTheDocument();
   });
 });

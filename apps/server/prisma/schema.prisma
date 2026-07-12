@@ -1,4 +1,4 @@
-// Hexhaven server schema — see docs/architecture/server.md for the design
+// BayCheArsBar server schema — see docs/architecture/server.md for the design
 // rationale (event-sourced GameAction log as the sole source of truth,
 // rotating refresh tokens, etc.).
 
