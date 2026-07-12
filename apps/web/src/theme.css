@@ -61,8 +61,12 @@ body,
 
 body {
   background:
-    radial-gradient(ellipse 1400px 900px at 50% -10%, #2a1e12 0%, transparent 60%),
-    linear-gradient(180deg, #17110a 0%, #120d08 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='62.4' viewBox='0 0 72 62.4'%3E%3Cpolygon points='36,0 72,18 72,44.4 36,62.4 0,44.4 0,18' fill='none' stroke='rgba(217,171,63,0.055)' stroke-width='1'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 1500px 950px at 50% -8%, #33240f 0%, transparent 62%),
+    radial-gradient(ellipse 900px 700px at 105% 105%, #1c2a1a 0%, transparent 55%),
+    radial-gradient(ellipse 800px 600px at -5% 90%, #2a1608 0%, transparent 55%),
+    linear-gradient(180deg, #18120a 0%, #100b06 100%);
   background-attachment: fixed;
   color: var(--hh-text);
   font-family: var(--hh-font-body);
