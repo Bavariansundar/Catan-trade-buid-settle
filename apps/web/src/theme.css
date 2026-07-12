@@ -40,6 +40,13 @@
 
   --hh-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Notch/home-indicator insets — 0 on regular displays. Overlay HUD
+     elements pad with these so nothing hides under device chrome. */
+  --hh-safe-top: env(safe-area-inset-top, 0px);
+  --hh-safe-right: env(safe-area-inset-right, 0px);
+  --hh-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --hh-safe-left: env(safe-area-inset-left, 0px);
+
   --hh-font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman",
     serif;
   --hh-font-body:
@@ -217,15 +224,239 @@ a {
 }
 
 /* Floating "buy development card" button — anchored over the board's bottom-left corner. */
-.hh-dev-buy-fab-wrap {
+/* ---------- In-game overlay HUD (docs/architecture/mobile-ux.md) ---------- */
+
+/* Overlay containers are pointer-transparent; their children opt back in,
+   so board pan/tap gestures pass through the empty parts of the HUD. */
+.hh-hud-top {
   position: absolute;
-  left: 1rem;
-  bottom: 1rem;
+  top: calc(0.5rem + var(--hh-safe-top));
+  left: calc(0.5rem + var(--hh-safe-left));
+  right: calc(0.5rem + var(--hh-safe-right));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   z-index: 5;
+  pointer-events: none;
+}
+
+.hh-hud-top > * {
+  pointer-events: auto;
+}
+
+.hh-hud-panel {
+  background: rgba(21, 16, 10, 0.78);
+  border: 1px solid var(--hh-border);
+  border-radius: var(--hh-radius-md);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--hh-shadow-sm);
+}
+
+.hh-hud-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  max-width: 100%;
+}
+
+.hh-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+
+.hh-hud-banner {
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  max-width: min(480px, 92vw);
+}
+
+.hh-hud-tray {
+  position: absolute;
+  left: calc(0.5rem + var(--hh-safe-left));
+  right: calc(0.5rem + var(--hh-safe-right));
+  bottom: calc(0.5rem + var(--hh-safe-bottom));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.hh-hud-tray > * {
+  pointer-events: auto;
+}
+
+.hh-tray-resources {
+  padding: 0.3rem 0.5rem;
+  overflow-x: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.hh-menu-fab {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--hh-bg-panel-hi);
+  color: var(--hh-text);
+  border: 1px solid var(--hh-border-hi);
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--hh-shadow-md);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.hh-menu-fab[aria-expanded="true"] {
+  background: var(--hh-bg-elevated);
+  border-color: var(--hh-accent-dim);
+}
+
+.hh-fab-cluster {
+  position: absolute;
+  right: calc(0.75rem + var(--hh-safe-right));
+  bottom: calc(4.4rem + var(--hh-safe-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  z-index: 6;
+}
+
+.hh-fab-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--hh-border-hi);
+  background: var(--hh-bg-panel-hi);
+  color: var(--hh-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--hh-shadow-md);
+  cursor: pointer;
+}
+
+.hh-fab-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hh-fab-item[data-active="true"] {
+  background: linear-gradient(180deg, var(--hh-accent-hi) 0%, var(--hh-accent) 100%);
+  color: var(--hh-accent-ink);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+.hh-hud-devcards {
+  position: absolute;
+  left: calc(0.6rem + var(--hh-safe-left));
+  bottom: calc(4.4rem + var(--hh-safe-bottom));
+  z-index: 6;
+  width: min(440px, 88vw);
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.hh-menu-sheet {
+  position: absolute;
+  left: calc(0.6rem + var(--hh-safe-left));
+  bottom: calc(4.4rem + var(--hh-safe-bottom));
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem;
+  min-width: 180px;
+}
+
+.hh-menu-sheet a {
+  color: var(--hh-text);
+  text-decoration: none;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--hh-radius-sm);
+  font-weight: 600;
+}
+
+.hh-menu-sheet a:hover {
+  background: var(--hh-bg-elevated);
+}
+
+.hh-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 2, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: calc(1rem + var(--hh-safe-top)) calc(1rem + var(--hh-safe-right))
+    calc(1rem + var(--hh-safe-bottom)) calc(1rem + var(--hh-safe-left));
+}
+
+/* ---------- Touch ergonomics ---------- */
+
+@media (pointer: coarse) {
+  .hh-button {
+    min-height: 44px;
+  }
+
+  .hh-fab-item {
+    min-height: 44px;
+  }
+
+  .hh-menu-fab {
+    width: 52px;
+    height: 52px;
+  }
+
+  .hh-trade-step-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* No hover on touch — use a pressed state for board pieces instead. */
+@media (hover: none) {
+  .hh-board-piece:hover {
+    transform: none;
+    filter: none;
+  }
+
+  .hh-board-piece:active {
+    transform: scale(1.25);
+    filter: brightness(1.25) drop-shadow(0 0 4px rgba(255, 235, 180, 0.7));
+  }
+}
+
+/* Compact chips + icon-only resources on narrow screens; tapping a chip
+   sets data-expanded to reveal the hidden spans (PlayerPanel.tsx). */
+@media (max-width: 760px) {
+  .hh-hud-chips .hh-chip-name,
+  .hh-hud-chips .hh-chip-extra {
+    display: none;
+  }
+
+  .hh-hud-chips [data-expanded="true"] .hh-chip-name,
+  .hh-hud-chips [data-expanded="true"] .hh-chip-extra {
+    display: inline;
+  }
+
+  .hh-res-name {
+    display: none;
+  }
 }
 
 .hh-dev-buy-fab {
@@ -263,16 +494,6 @@ a {
   opacity: 0.4;
   cursor: not-allowed;
   box-shadow: var(--hh-shadow-sm);
-}
-
-.hh-dev-buy-fab-label {
-  font-size: 0.68rem;
-  padding: 0.12rem 0.5rem;
-  border-radius: 999px;
-  background: var(--hh-bg-panel-hi);
-  border: 1px solid var(--hh-border-hi);
-  color: var(--hh-text-dim);
-  white-space: nowrap;
 }
 
 /* Trade dialog resource picker */

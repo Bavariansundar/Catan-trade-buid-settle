@@ -7,6 +7,7 @@ import { deserializeGameView } from "../game/deserializeGameView.js";
 import { GameTable } from "../game/GameTable.js";
 import { createGameSocket } from "../socket/socket.js";
 import { useAuthStore } from "../store/authStore.js";
+import { useUiStore } from "../store/uiStore.js";
 
 interface GameUpdateMessage {
   /** JSON-over-the-wire shape — Map fields arrive as entry arrays; run through `deserializeGameView` before use. `events` isn't consumed client-side (no in-game log/toasts). */
@@ -21,6 +22,14 @@ export function MultiplayerGameScreen() {
   const socketRef = useRef<Socket | null>(null);
   const lastSeenSeqRef = useRef<number>(-1);
   const [view, setView] = useState<GameView | null>(null);
+
+  // Full-screen the app shell while the game view is live (not during "Loading…").
+  const setImmersive = useUiStore((s) => s.setImmersive);
+  const gameActive = Boolean(view && user);
+  useEffect(() => {
+    setImmersive(gameActive);
+    return () => setImmersive(false);
+  }, [gameActive, setImmersive]);
 
   useEffect(() => {
     if (!accessToken || !gameId) return undefined;
@@ -56,7 +65,7 @@ export function MultiplayerGameScreen() {
   const nameFor = (id: string) => (id === user.id ? "You" : `Player ${id.slice(0, 6)}`);
 
   return (
-    <div style={{ padding: "1rem", height: "100%" }}>
+    <div style={{ height: "100%" }}>
       <GameTable
         view={view}
         viewerId={user.id}

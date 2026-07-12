@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Logo } from "./game/Logo.js";
 import { useAuthStore } from "./store/authStore.js";
+import { useUiStore } from "./store/uiStore.js";
 
 const navLinkStyle = ({ isActive }: { isActive: boolean }): CSSProperties => ({
   color: isActive ? "var(--hh-accent-hi)" : "var(--hh-text-dim)",
@@ -17,9 +18,13 @@ const navLinkStyle = ({ isActive }: { isActive: boolean }): CSSProperties => ({
 
 export function App() {
   const user = useAuthStore((s) => s.user);
+  // While a game is being played the header is hidden for a full-screen
+  // board; in-game navigation lives in GameTable's menu sheet instead.
+  const immersive = useUiStore((s) => s.immersive);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {!immersive && (
       <header
         style={{
           display: "flex",
@@ -87,7 +92,8 @@ export function App() {
           )}
         </div>
       </header>
-      <main style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+      )}
+      <main style={{ flex: 1, minHeight: 0, overflow: immersive ? "hidden" : "auto" }}>
         <Outlet />
       </main>
     </div>

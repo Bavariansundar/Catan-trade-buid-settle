@@ -11,7 +11,10 @@ export default defineConfig({
         name: "BayCheArsBar",
         short_name: "BayCheArsBar",
         start_url: "/",
-        display: "standalone",
+        // Chromeless install + landscape hint for the phone gaming layout —
+        // browsers that don't support these fall back gracefully.
+        display: "fullscreen",
+        orientation: "landscape",
         background_color: "#15100a",
         theme_color: "#15100a",
         icons: [

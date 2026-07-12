@@ -27,8 +27,9 @@ export function ResourceHandBar({ hand, selected, onSelect }: ResourceHandBarPro
           }}
         >
           <ResourceIcon type={r} size={26} />
-          <div style={{ fontSize: "0.8rem" }}>
-            {r}: {hand[r]}
+          <div style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+            <span className="hh-res-name">{r}: </span>
+            {hand[r]}
             {selected?.[r] ? ` (−${selected[r]})` : ""}
           </div>
         </button>

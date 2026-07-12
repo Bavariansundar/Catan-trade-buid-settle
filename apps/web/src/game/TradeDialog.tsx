@@ -143,20 +143,7 @@ export function TradeDialog({
   );
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(10, 6, 2, 0.65)",
-        backdropFilter: "blur(2px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 900,
-        padding: "1rem",
-      }}
-      onClick={onClose}
-    >
+    <div className="hh-modal-backdrop" onClick={onClose}>
       <div
         className="hh-card hh-card--hero hh-anim-pop-in"
         style={{

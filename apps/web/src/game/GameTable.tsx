@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import type {
   Action,
   Edge,
@@ -13,7 +14,7 @@ import { hexEquals } from "@baychearsbar/engine";
 import type { LegalActionsSummary } from "../worker/protocol.js";
 import { HexBoard } from "../board/HexBoard.js";
 import { playerColorMap } from "../board/playerColors.js";
-import { ActionBar, type BuildMode } from "./ActionBar.js";
+import { ActionCluster, PrimaryAction, type BuildMode } from "./ActionBar.js";
 import { DevCardBar } from "./DevCardBar.js";
 import { DiceDisplay } from "./DiceDisplay.js";
 import { DiscardPicker } from "./DiscardPicker.js";
@@ -29,10 +30,18 @@ export interface GameTableProps {
   readonly dispatch: (action: Action) => void;
 }
 
+/**
+ * Full-screen game layout: the board fills the container and every other
+ * control floats above it as an overlay (player chips + status on top,
+ * resource tray + primary action at the bottom, an expandable action
+ * cluster bottom-right) — see docs/architecture/mobile-ux.md.
+ */
 export function GameTable({ view, viewerId, legalActions, nameFor, dispatch }: GameTableProps) {
   const playerColors = useMemo(() => playerColorMap(view.players.map((p) => p.id)), [view.players]);
   const [buildMode, setBuildMode] = useState<BuildMode>(null);
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [devPanelOpen, setDevPanelOpen] = useState(false);
   const [playingKnight, setPlayingKnight] = useState(false);
   const [robberVictimChoice, setRobberVictimChoice] = useState<{
     hex: Hex;
@@ -142,41 +151,8 @@ export function GameTable({ view, viewerId, legalActions, nameFor, dispatch }: G
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", height: "100%" }}>
-      <PlayerPanel view={view} playerColors={playerColors} nameFor={nameFor} />
-
-      <div
-        className="hh-card"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "0.5rem",
-          padding: "0.5rem 1rem",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          <span className="hh-badge">Turn {view.turnNumber}</span>
-          <span style={{ fontSize: "0.85rem", color: "var(--hh-text-dim)" }}>
-            Target {view.targetVictoryPoints} VP
-          </span>
-        </div>
-        <DiceDisplay roll={view.diceRoll} />
-      </div>
-
-      <div
-        style={{
-          position: "relative",
-          flex: "1 1 auto",
-          minHeight: 260,
-          borderRadius: "var(--hh-radius-lg)",
-          border: "1px solid var(--hh-border)",
-          boxShadow: "var(--hh-shadow-lg)",
-          overflow: "hidden",
-          padding: "0.75rem",
-        }}
-      >
+    <div style={{ position: "relative", height: "100%", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0 }}>
         <HexBoard
           view={view}
           playerColors={playerColors}
@@ -187,106 +163,171 @@ export function GameTable({ view, viewerId, legalActions, nameFor, dispatch }: G
           onHexClick={handleHexClick}
           robberSelectable={robberActive}
         />
+      </div>
 
-        {view.phase.name === "main" && me?.hand && (
-          <div className="hh-dev-buy-fab-wrap">
+      <div className="hh-hud-top">
+        <PlayerPanel view={view} playerColors={playerColors} nameFor={nameFor} />
+        <div className="hh-hud-panel hh-status-pill">
+          <span className="hh-badge">Turn {view.turnNumber}</span>
+          <DiceDisplay roll={view.diceRoll} />
+          <span style={{ fontSize: "0.8rem", color: "var(--hh-text-dim)", whiteSpace: "nowrap" }}>
+            Target {view.targetVictoryPoints} VP
+          </span>
+        </div>
+
+        {view.phase.name === "setup" && isMyTurn && (
+          <div className="hh-card hh-hud-banner">
+            {view.phase.awaitingRoad
+              ? "Place a road connected to your settlement."
+              : "Place a settlement on a highlighted spot."}
+          </div>
+        )}
+        {mandatoryRobberMove && (
+          <div className="hh-card hh-hud-banner">Move the robber — tap a highlighted hex.</div>
+        )}
+        {playingKnight && (
+          <div className="hh-card hh-hud-banner">Playing Knight — tap a highlighted hex.</div>
+        )}
+        {robberVictimChoice && (
+          <div className="hh-card hh-hud-banner">
+            <div>Choose who to steal from:</div>
+            <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.4rem", flexWrap: "wrap" }}>
+              {robberVictimChoice.candidates.map((pid) => (
+                <button
+                  key={pid}
+                  type="button"
+                  className="hh-button hh-button--secondary"
+                  onClick={() => dispatchRobberAction(robberVictimChoice.hex, pid)}
+                >
+                  {nameFor(pid)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {roadBuildingEdges && (
+          <div className="hh-card hh-hud-banner">
+            Road Building: pick {2 - roadBuildingEdges.length} more road(s) on the board.
+          </div>
+        )}
+        {!inSetup && buildMode && (
+          <div
+            className="hh-card hh-hud-banner"
+            style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}
+          >
+            <span>Placing {buildMode} — tap a highlighted spot.</span>
             <button
               type="button"
-              className="hh-dev-buy-fab"
-              disabled={!legalActions.canBuyDevCard}
-              onClick={() => dispatch({ type: "BUY_DEV_CARD", playerId: viewerId })}
-              title="Buy development card — 1 ore, 1 wheat, 1 sheep"
+              className="hh-button hh-button--secondary"
+              onClick={() => setBuildMode(null)}
             >
-              +
+              Cancel
             </button>
-            <span className="hh-dev-buy-fab-label">⛰️ 🌾 🐑</span>
           </div>
         )}
       </div>
 
-      {me?.hand && (
-        <div
-          className="hh-card"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.85rem",
-            flexShrink: 1,
-            maxHeight: "clamp(170px, 26vh, 260px)",
-            overflowY: "auto",
-          }}
-        >
-          <ResourceHandBar hand={me.hand} />
-          <ActionBar
-            phaseName={view.phase.name}
-            isMyTurn={isMyTurn}
-            buildMode={effectiveBuildMode}
-            canBuildRoad={legalActions.roadEdgeIds.length > 0}
-            canBuildSettlement={legalActions.settlementVertexIds.length > 0}
-            canBuildCity={legalActions.cityVertexIds.length > 0}
-            onRoll={() => dispatch({ type: "ROLL_DICE", playerId: viewerId })}
-            onEndTurn={() => dispatch({ type: "END_TURN", playerId: viewerId })}
-            onSetBuildMode={setBuildMode}
-            onOpenTrade={() => setTradeOpen(true)}
+      {devPanelOpen && view.phase.name === "main" && me?.devCards && me.devCards.length > 0 && (
+        <div className="hh-hud-devcards">
+          <DevCardBar
+            cards={me.devCards}
+            playableTypes={legalActions.playableDevCardTypes}
+            onPlayKnight={() => {
+              setPlayingKnight(true);
+              setDevPanelOpen(false);
+            }}
+            onPlayMonopoly={(resource: ResourceType) => {
+              dispatch({ type: "PLAY_DEV_CARD", card: "monopoly", playerId: viewerId, resource });
+              setDevPanelOpen(false);
+            }}
+            onPlayYearOfPlenty={(a, b) => {
+              dispatch({
+                type: "PLAY_DEV_CARD",
+                card: "year_of_plenty",
+                playerId: viewerId,
+                resources: [a, b],
+              });
+              setDevPanelOpen(false);
+            }}
+            onPlayRoadBuilding={() => {
+              setRoadBuildingEdges([]);
+              setDevPanelOpen(false);
+            }}
           />
-          {view.phase.name === "main" && me.devCards && me.devCards.length > 0 && (
-            <DevCardBar
-              cards={me.devCards}
-              playableTypes={legalActions.playableDevCardTypes}
-              onPlayKnight={() => setPlayingKnight(true)}
-              onPlayMonopoly={(resource: ResourceType) =>
-                dispatch({ type: "PLAY_DEV_CARD", card: "monopoly", playerId: viewerId, resource })
-              }
-              onPlayYearOfPlenty={(a, b) =>
-                dispatch({
-                  type: "PLAY_DEV_CARD",
-                  card: "year_of_plenty",
-                  playerId: viewerId,
-                  resources: [a, b],
-                })
-              }
-              onPlayRoadBuilding={() => setRoadBuildingEdges([])}
-            />
-          )}
         </div>
       )}
 
-      {inDiscardPhase && owedDiscard > 0 && me?.hand && (
-        <DiscardPicker
-          hand={me.hand}
-          owed={owedDiscard}
-          onDiscard={(resources: Partial<ResourceHand>) =>
-            dispatch({ type: "DISCARD", playerId: viewerId, resources })
-          }
-        />
-      )}
-
-      {mandatoryRobberMove && (
-        <div className="hh-card">Move the robber — click a highlighted hex.</div>
-      )}
-      {playingKnight && <div className="hh-card">Playing Knight — click a highlighted hex.</div>}
-
-      {robberVictimChoice && (
-        <div className="hh-card">
-          <div>Choose who to steal from:</div>
-          <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.4rem" }}>
-            {robberVictimChoice.candidates.map((pid) => (
-              <button
-                key={pid}
-                type="button"
-                className="hh-button hh-button--secondary"
-                onClick={() => dispatchRobberAction(robberVictimChoice.hex, pid)}
-              >
-                {nameFor(pid)}
-              </button>
-            ))}
+      {me?.hand && (
+        <div className="hh-hud-tray">
+          <button
+            type="button"
+            className="hh-menu-fab"
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            ☰
+          </button>
+          {view.phase.name === "main" && me.devCards && me.devCards.length > 0 && (
+            <button
+              type="button"
+              className="hh-menu-fab"
+              style={{ fontSize: "0.85rem" }}
+              aria-label="Development cards"
+              aria-expanded={devPanelOpen}
+              onClick={() => setDevPanelOpen((o) => !o)}
+            >
+              🎴{me.devCards.length}
+            </button>
+          )}
+          <div className="hh-hud-panel hh-tray-resources">
+            <ResourceHandBar hand={me.hand} />
+          </div>
+          <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+            <PrimaryAction
+              phaseName={view.phase.name}
+              isMyTurn={isMyTurn}
+              onRoll={() => dispatch({ type: "ROLL_DICE", playerId: viewerId })}
+              onEndTurn={() => dispatch({ type: "END_TURN", playerId: viewerId })}
+            />
           </div>
         </div>
       )}
 
-      {roadBuildingEdges && (
-        <div className="hh-card">
-          Road Building: pick {2 - roadBuildingEdges.length} more road(s) on the board.
+      <ActionCluster
+        phaseName={view.phase.name}
+        buildMode={buildMode}
+        canBuildRoad={legalActions.roadEdgeIds.length > 0}
+        canBuildSettlement={legalActions.settlementVertexIds.length > 0}
+        canBuildCity={legalActions.cityVertexIds.length > 0}
+        canBuyDevCard={legalActions.canBuyDevCard}
+        onSetBuildMode={setBuildMode}
+        onOpenTrade={() => setTradeOpen(true)}
+        onBuyDevCard={() => dispatch({ type: "BUY_DEV_CARD", playerId: viewerId })}
+      />
+
+      {menuOpen && (
+        <div className="hh-card hh-menu-sheet">
+          <Link to="/" onClick={() => setMenuOpen(false)}>
+            🏠 Leave game
+          </Link>
+          <Link to="/rules" onClick={() => setMenuOpen(false)}>
+            📖 Rules
+          </Link>
+        </div>
+      )}
+
+      {inDiscardPhase && owedDiscard > 0 && me?.hand && (
+        <div className="hh-modal-backdrop">
+          <div className="hh-anim-pop-in" style={{ width: 480, maxWidth: "94vw" }}>
+            <DiscardPicker
+              hand={me.hand}
+              owed={owedDiscard}
+              onDiscard={(resources: Partial<ResourceHand>) =>
+                dispatch({ type: "DISCARD", playerId: viewerId, resources })
+              }
+            />
+          </div>
         </div>
       )}
 

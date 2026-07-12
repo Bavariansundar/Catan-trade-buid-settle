@@ -7,6 +7,7 @@ import {
   saveSinglePlayerGame,
   type SinglePlayerSave,
 } from "../persistence/db.js";
+import { useUiStore } from "../store/uiStore.js";
 import type { BotDifficulty } from "../worker/protocol.js";
 import { useEngineWorker, type SinglePlayerConfig } from "../worker/useEngineWorker.js";
 
@@ -59,6 +60,15 @@ export function SinglePlayerScreen() {
   }, []);
 
   const engine = useEngineWorker(config, handleActionsApplied);
+
+  // Full-screen the app shell only while an actual game is on screen —
+  // the setup form below keeps the normal header for navigation.
+  const setImmersive = useUiStore((s) => s.setImmersive);
+  const gameActive = Boolean(config && engine.view && engine.legalActions);
+  useEffect(() => {
+    setImmersive(gameActive);
+    return () => setImmersive(false);
+  }, [gameActive, setImmersive]);
 
   // Persist after every batch of applied actions; drop the save once the game ends.
   const lastSavedActionCountRef = useRef(0);
@@ -151,7 +161,7 @@ export function SinglePlayerScreen() {
   }
 
   return (
-    <div style={{ padding: "1rem", height: "100%" }}>
+    <div style={{ height: "100%" }}>
       <GameTable
         view={engine.view}
         viewerId={config.humanPlayerId}

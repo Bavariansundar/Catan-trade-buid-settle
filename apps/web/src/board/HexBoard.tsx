@@ -10,6 +10,18 @@ import {
   vertexToPixel,
   HEX_SIZE,
 } from "./projection.js";
+import { usePanZoom } from "./usePanZoom.js";
+
+/** Wraps a click handler so the tap that ends a pan gesture is ignored. */
+function guarded<T>(
+  wasDrag: () => boolean,
+  fn: ((arg: T) => void) | undefined,
+): ((arg: T) => void) | undefined {
+  if (!fn) return undefined;
+  return (arg: T) => {
+    if (!wasDrag()) fn(arg);
+  };
+}
 
 const TERRAIN_COLOR: Record<TerrainType, string> = {
   wood: "var(--hh-resource-wood)",
@@ -162,9 +174,9 @@ export function HexBoard({
   playerColors,
   legalVertexIds,
   legalEdgeIds,
-  onVertexClick,
-  onEdgeClick,
-  onHexClick,
+  onVertexClick: rawOnVertexClick,
+  onEdgeClick: rawOnEdgeClick,
+  onHexClick: rawOnHexClick,
   robberSelectable,
 }: HexBoardProps) {
   const vertices = useMemo(() => allVerticesOnBoard(view.board), [view.board]);
@@ -186,12 +198,32 @@ export function HexBoard({
     return { minX, minY, width: maxX - minX, height: maxY - minY };
   }, [view.board.tiles]);
 
+  const { svgRef, viewBox, onPointerDown, reset, wasDrag } = usePanZoom(bounds);
+
+  // Fatter invisible hit areas around the small legal-move markers on touch
+  // devices (finger-sized targets); mouse users keep tighter, more precise ones.
+  const coarsePointer = useMemo(
+    () => typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches,
+    [],
+  );
+  const vertexHitR = HEX_SIZE * (coarsePointer ? 0.34 : 0.2);
+  const edgeHitW = HEX_SIZE * (coarsePointer ? 0.5 : 0.3);
+
+  // Suppress the click that ends a pan gesture so dragging across a legal
+  // vertex/edge/hex never accidentally builds or moves the robber.
+  const onVertexClick = guarded(wasDrag, rawOnVertexClick);
+  const onEdgeClick = guarded(wasDrag, rawOnEdgeClick);
+  const onHexClick = guarded(wasDrag, rawOnHexClick);
+
   return (
     <svg
-      viewBox={`${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`}
+      ref={svgRef}
+      viewBox={viewBox}
       role="img"
       aria-label="Game board"
-      style={{ width: "100%", height: "100%", touchAction: "manipulation" }}
+      onPointerDown={onPointerDown}
+      onDoubleClick={reset}
+      style={{ width: "100%", height: "100%", touchAction: "none" }}
     >
       <defs>
         <radialGradient id="hh-table-water" cx="50%" cy="42%" r="75%">
@@ -446,18 +478,28 @@ export function HexBoard({
               </>
             )}
             {isLegal && !roadOwner && (
-              <line
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="var(--hh-accent)"
-                strokeWidth={HEX_SIZE * 0.1}
-                strokeLinecap="round"
-                opacity={0.55}
-                onClick={() => onEdgeClick?.(edge)}
-                style={{ cursor: "pointer", transition: "opacity 0.15s var(--hh-ease)" }}
-              />
+              <g onClick={() => onEdgeClick?.(edge)} style={{ cursor: "pointer" }}>
+                <line
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="var(--hh-accent)"
+                  strokeWidth={HEX_SIZE * 0.1}
+                  strokeLinecap="round"
+                  opacity={0.55}
+                  style={{ transition: "opacity 0.15s var(--hh-ease)" }}
+                />
+                <line
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="transparent"
+                  strokeWidth={edgeHitW}
+                  strokeLinecap="round"
+                />
+              </g>
             )}
             {!roadOwner && !isLegal && (
               <line
@@ -535,17 +577,22 @@ export function HexBoard({
           );
         }
         return isLegal ? (
-          <circle
+          <g
             key={`v-${vertex.id}`}
             className="hh-board-piece"
-            cx={p.x}
-            cy={p.y}
-            r={HEX_SIZE * 0.13}
-            fill="var(--hh-accent)"
-            opacity={0.7}
             onClick={() => onVertexClick?.(vertex)}
-            style={{ cursor: "pointer", transition: "opacity 0.15s var(--hh-ease)" }}
-          />
+            style={{ cursor: "pointer" }}
+          >
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={HEX_SIZE * 0.13}
+              fill="var(--hh-accent)"
+              opacity={0.7}
+              style={{ transition: "opacity 0.15s var(--hh-ease)" }}
+            />
+            <circle cx={p.x} cy={p.y} r={vertexHitR} fill="transparent" />
+          </g>
         ) : null;
       })}
     </svg>
