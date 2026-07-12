@@ -37,10 +37,21 @@ COPY --from=build /repo/packages/bots/dist packages/bots/dist
 COPY --from=build /repo/apps/server/package.json apps/server/package.json
 COPY --from=build /repo/apps/server/prisma apps/server/prisma
 COPY --from=build /repo/apps/server/dist apps/server/dist
+# Deliberately NOT --filter=...@baychearsbar/server here: with a filter,
+# pnpm only fully links node_modules (incl. nested workspace-to-workspace
+# links) for packages it treats as install targets, not for packages merely
+# pulled in as the target's dependencies — so packages/bots never got its
+# own node_modules/@baychearsbar/engine symlink, and its compiled output
+# (imported by the server at runtime) threw ERR_MODULE_NOT_FOUND even
+# though the package was right there on disk. Unfiltered is also correct
+# here: this stage's context only ever has server/bots/engine's
+# package.json files (apps/web was never copied in), so it can't install
+# anything broader anyway.
+#
 # node_modules aren't carried over between stages, so this reinstall also
 # re-triggers the `prisma generate` postinstall — same reason the schema is
 # copied above.
-RUN pnpm install --prod --frozen-lockfile --filter=...@baychearsbar/server
+RUN pnpm install --prod --frozen-lockfile
 
 # Runs as an unprivileged user — the base image's built-in "node" account, not root.
 USER node
