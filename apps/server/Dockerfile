@@ -1,12 +1,23 @@
 FROM node:20-slim AS base
 WORKDIR /repo
 RUN corepack enable
+# Prisma's generated query engine needs OpenSSL at both `prisma generate`
+# time (which runs as a postinstall hook on every `pnpm install`, deps stage
+# included) and at runtime — node:20-slim doesn't ship it, and without this
+# Prisma silently guesses "openssl-1.1.x" and downloads the wrong engine
+# binary for this (OpenSSL 3.x) base image.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages/engine/package.json packages/engine/package.json
 COPY packages/bots/package.json packages/bots/package.json
 COPY apps/server/package.json apps/server/package.json
+# The postinstall hook below runs `prisma generate`, which needs the schema
+# present — package.json alone isn't enough.
+COPY apps/server/prisma apps/server/prisma
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
@@ -16,9 +27,7 @@ COPY packages/bots packages/bots
 COPY apps/server apps/server
 RUN pnpm exec turbo run build --filter=...@baychearsbar/server
 
-FROM node:20-slim AS runtime
-WORKDIR /repo
-RUN corepack enable
+FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /repo/pnpm-workspace.yaml /repo/pnpm-lock.yaml /repo/package.json ./
 COPY --from=build /repo/packages/engine/package.json packages/engine/package.json
@@ -26,7 +35,11 @@ COPY --from=build /repo/packages/engine/dist packages/engine/dist
 COPY --from=build /repo/packages/bots/package.json packages/bots/package.json
 COPY --from=build /repo/packages/bots/dist packages/bots/dist
 COPY --from=build /repo/apps/server/package.json apps/server/package.json
+COPY --from=build /repo/apps/server/prisma apps/server/prisma
 COPY --from=build /repo/apps/server/dist apps/server/dist
+# node_modules aren't carried over between stages, so this reinstall also
+# re-triggers the `prisma generate` postinstall — same reason the schema is
+# copied above.
 RUN pnpm install --prod --frozen-lockfile --filter=...@baychearsbar/server
 
 # Runs as an unprivileged user — the base image's built-in "node" account, not root.
